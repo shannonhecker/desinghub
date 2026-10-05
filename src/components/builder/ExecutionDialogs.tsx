@@ -65,7 +65,7 @@ export function AmendDialog({ ctx, open, order, current, start, market, latest }
 }
 
 /* The small chart's size and type (Highcharts takes CSS lengths). */
-const CHART_HEIGHT = 150;
+const CHART_HEIGHT = 180;
 const AXIS_FONT = `${10}px`;
 
 /** Compare orders: a measure per row, an order per column, and both

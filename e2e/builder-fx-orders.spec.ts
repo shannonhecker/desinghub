@@ -217,9 +217,10 @@ test.describe("Builder - FX Execution sample orders", () => {
     await expect(stage(page).locator(".dh-order-placed")).toHaveCount(2);
   });
 
-  test("dragging the LMT tag amends the limit: a read-out follows, snapped; release steps the limit; Escape cancels", async ({ page }) => {
+  test("dragging the LMT tag amends the limit: a read-out follows, snapped; release asks to confirm; Escape cancels", async ({ page }) => {
     await applyFx(page);
     const before = (await priceOf(limitTag(page)))!;
+    const amendButton = page.getByRole("button", { name: "Amend", exact: true });
 
     /* Escape during the drag: nothing changes, and Present stays. */
     await dragStart(page, limitTag(page), 50);
@@ -228,19 +229,38 @@ test.describe("Builder - FX Execution sample orders", () => {
     await expect(readout(page)).toHaveCount(0);
     await page.mouse.up();
     await stillPresenting(page);
+    await expect(dialog(page)).toHaveCount(0);
     expect(await priceOf(limitTag(page))).toBe(before);
     await expect(toast(page)).toHaveText("");
 
+    /* Released: the Amend dialog opens on the dropped price. Escape there leaves the limit alone. */
     await dragStart(page, limitTag(page), 50);
     const shown = (await readout(page).textContent())!.replace("LMT → ", "");
     expect(shown).toMatch(PRICE);
     expect(Number(shown)).toBeLessThan(Number(before));
     await page.mouse.up();
     await expect(readout(page)).toHaveCount(0);
+    await expect(dialog(page)).toContainText("Amend limit price");
+    await expect(dialog(page)).toContainText(`Limit now ${before}`);
+    await expect(page.locator("#dh-amend-price")).toHaveValue(shown);
+    await expect(toast(page)).toHaveText("");
+    await closeWithEscape(page, limitTag(page));
+    expect(await priceOf(limitTag(page))).toBe(before);
+    await expect(toast(page)).toHaveText("");
+
+    /* Dragged again and confirmed: the limit steps, one toast says so, focus is back on the tag. */
+    await dragStart(page, limitTag(page), 50);
+    const again = (await readout(page).textContent())!.replace("LMT → ", "");
+    await page.mouse.up();
+    await expect(page.locator("#dh-amend-price")).toHaveValue(again);
+    await amendButton.click();
+    await expect(dialog(page)).toHaveCount(0);
     await expect(toast(page)).toHaveText(CONFIRMATION);
-    await expect.poll(() => priceOf(limitTag(page))).toBe(shown);
+    await expect(toast(page).locator("> span")).toHaveCount(1);
+    await expect.poll(() => priceOf(limitTag(page))).toBe(again);
+    await expect(limitTag(page)).toBeFocused();
     /* The drawn limit series steps: its last point is the new limit, the one before is the old. */
-    await expect(stage(page).locator(".dh-exec")).toHaveAttribute("data-limit-tail", `${before},${shown}`);
+    await expect(stage(page).locator(".dh-exec")).toHaveAttribute("data-limit-tail", `${before},${again}`);
   });
 
   test("the limit line itself can be grabbed and dragged", async ({ page }) => {
@@ -256,9 +276,13 @@ test.describe("Builder - FX Execution sample orders", () => {
     await expect(readout(page)).toHaveText(/^LMT → \d\.\d{5}$/);
     const shown = (await readout(page).textContent())!.replace("LMT → ", "");
     await page.mouse.up();
+    await expect(page.locator("#dh-amend-price")).toHaveValue(shown);
+    await page.locator("#dh-amend-price").press("Enter");
+    await expect(dialog(page)).toHaveCount(0);
     await expect(toast(page)).toHaveText(CONFIRMATION);
     await expect.poll(() => priceOf(limitTag(page))).toBe(shown);
     expect(shown).not.toBe(before);
+    await expect(limitTag(page)).toBeFocused();
   });
 
   test("keyboard: arrows step the limit by 0.00001, Enter opens Amend with that price, the dialog's field amends, focus returns", async ({ page }) => {
@@ -365,6 +389,53 @@ test.describe("Builder - FX Execution sample orders", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
+  test("Edit keeps the builder's gestures: a press and drag on the limit line draws no read-out, and a click selects the block", async ({ page }) => {
+    await applyFx(page);
+    await page.getByRole("button", { name: "Edit canvas" }).click();
+    const edit = page.locator(".bp-viewport-wrapper");
+    await expect(edit.locator(".dh-exec .highcharts-root")).toBeVisible({ timeout: 30_000 });
+    const pill = (await edit.locator(".dh-exec .dh-exec-pill-limit").boundingBox())!;
+    const plot = (await edit.locator(".dh-exec .highcharts-plot-background").boundingBox())!;
+    const y = pill.y + pill.height / 2;
+    const x = plot.x + plot.width - 60;
+    await page.mouse.move(x, y);
+    await expect(edit.locator(".dh-exec-plot")).not.toHaveCSS("cursor", "ns-resize");
+    await page.mouse.down();
+    await page.mouse.move(x, y + 3, { steps: 2 });
+    await expect(page.locator(".dh-order-readout, .dh-order-preview")).toHaveCount(0);
+    await page.mouse.up();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByRole("menu")).toHaveCount(0);
+    /* The press was the builder's: the chart block is selected. */
+    await expect(edit.locator(".is-selected").filter({ has: page.locator(".dh-exec") })).toHaveCount(1);
+  });
+
+  test("the drag reads its price from the drawn axis: right after the window changes size", async ({ page }) => {
+    await applyFx(page);
+    for (const size of [{ width: 1180, height: 760 }, { width: 1500, height: 940 }]) {
+      await page.setViewportSize(size);
+      await expect(limitTag(page)).toBeVisible();
+      /* The chart has settled at the new size when its tag target stops moving. */
+      let last = -1;
+      await expect.poll(async () => { const y = (await centre(limitTag(page))).y; const still = Math.abs(y - last) < 0.5; last = y; return still; }, { timeout: 10_000 }).toBe(true);
+      const price = Number(await priceOf(limitTag(page)));
+      /* Out and back to where it was pressed: the read-out is the tag's own price, to a pixel's worth. */
+      const from = await centre(limitTag(page));
+      await page.mouse.move(from.x, from.y);
+      await page.mouse.down();
+      await page.mouse.move(from.x, from.y + 40, { steps: 6 });
+      const away = Number((await readout(page).textContent())!.replace("LMT → ", ""));
+      expect(away).toBeLessThan(price);
+      await page.mouse.move(from.x, from.y, { steps: 6 });
+      const back = Number((await readout(page).textContent())!.replace("LMT → ", ""));
+      expect(Math.abs(back - price), `${size.width}px: ${back} against ${price}`).toBeLessThanOrEqual(0.00004);
+      await page.keyboard.press("Escape");
+      await page.mouse.up();
+      await expect(readout(page)).toHaveCount(0);
+      await expect(dialog(page)).toHaveCount(0);
+    }
+  });
+
   for (const system of SYSTEMS) {
     test(`${system}: the ticket, Amend and the price menu are the system's own; focus stays inside and returns`, async ({ page }) => {
       const own: Record<(typeof SYSTEMS)[number], { dialog: RegExp; menu: RegExp; button: RegExp }> = {
@@ -469,8 +540,39 @@ test.describe("Builder - FX Execution sample orders, touch and phone", () => {
       for (let i = 1; i <= 6; i++) fire("pointermove", y + i * 8);
       fire("pointerup", y + 48);
     }, at.y);
+    /* The drop asks first, as with a mouse. */
+    await expect(dialog(page)).toContainText("Amend limit price");
+    await page.getByRole("button", { name: "Amend", exact: true }).click();
     await expect(toast(page)).toHaveText(CONFIRMATION);
     expect(await priceOf(limitTag(page))).not.toBe(before);
+  });
+
+  test("tablet: the ticket fits, and the limit can be dragged and confirmed", async ({ page }) => {
+    await applyFx(page);
+    await page.setViewportSize({ width: 834, height: 1112 });
+    await page.getByRole("button", { name: /Tablet/i }).first().click();
+    await expect(fillNow(page)).toBeVisible();
+    await fillNow(page).scrollIntoViewIfNeeded();
+    await fillNow(page).click();
+    await expectTicket(page, "BUY", "Limit");
+    const box = (await dialog(page).boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(-1);
+    expect(box.x + box.width).toBeLessThanOrEqual(835);
+    expect(box.y).toBeGreaterThanOrEqual(-1);
+    await submit(page).scrollIntoViewIfNeeded();
+    await submit(page).click();
+    await expect(toast(page)).toHaveText(CONFIRMATION);
+    await expect(dialog(page)).toHaveCount(0);
+
+    await limitTag(page).scrollIntoViewIfNeeded();
+    const before = await priceOf(limitTag(page));
+    await dragStart(page, limitTag(page), 30);
+    await expect(readout(page)).toHaveText(/^LMT → \d\.\d{5}$/);
+    await page.mouse.up();
+    await expect(dialog(page)).toContainText("Amend limit price");
+    await page.getByRole("button", { name: "Amend", exact: true }).click();
+    await expect(toast(page)).toHaveText(CONFIRMATION);
+    await expect.poll(() => priceOf(limitTag(page))).not.toBe(before);
   });
 
   for (const system of SYSTEMS) {

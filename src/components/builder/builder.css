@@ -11388,7 +11388,10 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .dh-kit-cell { min-width: 0; }
 .dh-kit-cell > * { width: 100%; min-width: 0; }
 .dh-kit-cell .cds--text-input__field-wrapper { width: 100%; }
-.dh-kit-choice > *, .dh-kit-tiles { display: flex; width: 100%; gap: var(--dh-kit-gap-tight); }
+/* border-box: Salt's group has a border and padding of its own; wider than
+   its row it overflowed, and Salt's dialog then flipped its scroll padding
+   on and off every frame. */
+.dh-kit-choice > *, .dh-kit-tiles { display: flex; box-sizing: border-box; width: 100%; gap: var(--dh-kit-gap-tight); }
 /* Carbon's tile group: a fieldset, its legend, then the tiles in one box. */
 .dh-kit-choice fieldset.dh-kit-tiles { display: block; min-width: 0; border: 0; margin: 0; padding: 0; }
 .dh-kit-choice fieldset.dh-kit-tiles > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--dh-kit-gap-tight); }
@@ -11426,11 +11429,36 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 /* The message says what is wrong; the label keeps the dialog's text colour (uoaui's error red is too faint on it). */
 .preview-uoaui.a-app.dh-kit-scope .dh-kit-dialog .a-input-error .a-input-label { color: inherit; }
 .preview-uoaui.a-app.dh-kit-scope .dh-kit-dialog .dh-kit-error { margin-top: var(--dh-kit-gap-tight); }
+/* The kit's menus wear the canvas's overlay look (the chart rail's menus:
+   --dh-exec-menu-* in chrome-tokens.css, handed over by RealDialogKit), so a
+   price menu and a rail menu are one surface in each system: its own
+   tokens, a faint hairline, a soft shadow. Rows stay the system's own. */
+.saltMenuPanel.dh-kit-menu-surface,
+.dh-kit-menu-surface .MuiPaper-root.MuiMenu-paper,
+.fui-MenuPopover.dh-kit-menu-surface,
+.dh-kit-scope .cds--menu.dh-kit-menu-surface,
+.preview-uoaui.a-app.dh-kit-scope .a-dropdown-menu.dh-kit-menu-surface {
+  background-color: var(--dh-exec-menu-bg);
+  background-image: var(--dh-exec-menu-image, none);
+  backdrop-filter: var(--dh-exec-menu-backdrop, none);
+  border: var(--bc-hairline) solid var(--dh-exec-menu-border, transparent);
+  border-radius: var(--dh-exec-menu-radius, 0);
+  box-shadow: var(--dh-exec-menu-shadow, none);
+}
+.fui-MenuPopover.dh-kit-menu-surface .fui-MenuItem,
+.preview-uoaui.a-app.dh-kit-scope .dh-kit-menu-surface .a-dropdown-item { border-radius: var(--dh-exec-menu-item-radius, 0); }
 .dh-kit-menu-uoaui { z-index: 1400; min-width: var(--dh-exec-flyout-w); margin: 0; padding: var(--dh-kit-gap-tight); list-style: none; }
 .dh-kit-menu-uoaui .a-dropdown-item { border-radius: var(--dh-kit-gap-tight); white-space: nowrap; }
 .dh-kit-menu-uoaui .a-dropdown-item[aria-disabled="true"] { opacity: 0.5; cursor: default; }
 .dh-kit-menu-uoaui .a-dropdown-item:focus-visible { outline: var(--dh-focus-ring) solid currentColor; outline-offset: calc(-1 * var(--dh-focus-ring)); }
 .dh-kit-fluent-small { max-width: var(--dh-kit-uoaui-w-small); }
+/* Fluent: its actions sit a full gap below the last field. */
+.fui-DialogBody .dh-kit-body { padding-block-end: calc(var(--dh-kit-gap) / 2); }
+/* Carbon: the close button is its 3rem square in the corner (the tooltip
+   wrapper around it otherwise stretches into the heading and casts a shadow). */
+.dh-kit-scope .cds--modal.dh-kit-dialog .cds--modal-close-button { inline-size: 3rem; }
+.dh-kit-scope .cds--modal.dh-kit-dialog .cds--modal-close-button .cds--popover-container,
+.dh-kit-scope .cds--modal.dh-kit-dialog .cds--modal-close-button .cds--popover { box-shadow: none; }
 @media (max-width: 30rem) {
   .dh-kit-row { grid-template-columns: minmax(0, 1fr); }
 }

@@ -5,14 +5,12 @@ import type Highcharts from "highcharts";
 import type HighchartsReact from "highcharts-react-official";
 import { create } from "zustand";
 import { formatPrice, type ExecutionView } from "@/lib/executionModel";
-import { amendLimit, canAmend, SAMPLE_CONFIRMATION, snapPrice, stagedTicket, validateAmendment, type Side } from "@/lib/executionOrders";
-import { parseExecutionTime } from "@/lib/reportData/executionDataset";
-import { tableOf, type ReportDataset } from "@/lib/reportData/types";
+import { amendLimit, canAmend, snapPrice, stagedTicket, type Side } from "@/lib/executionOrders";
+import type { ReportDataset } from "@/lib/reportData/types";
 import type { DesignSystem } from "@/store/useBuilder";
 import type { ThemeVars } from "./SimulatedHighchart";
 import { pillColors, type ChartFrame } from "./executionChartOptions";
-import { useFeedStore } from "./useExecutionFeed";
-import { orderActions, showToast, useOrderSession } from "./useOrderSession";
+import { orderActions, useOrderSession } from "./useOrderSession";
 import { OrderTagLayer } from "./OrderTagLayer";
 import { OrderWorkflow } from "./OrderWorkflow";
 
@@ -21,8 +19,8 @@ import { OrderWorkflow } from "./OrderWorkflow";
 
    Grab the working order's limit line, or its LMT tag, and drag it: a
    dashed preview with "LMT → price" follows, snapped to 0.00001; on
-   release the limit series steps to it and a toast confirms (the design
-   note, PR D). Drag the BID tag: release above the market stages a SELL
+   release the Amend dialog opens on that price, and confirming it steps
+   the limit series and shows the toast (the design note, PR D). Drag the BID tag: release above the market stages a SELL
    take profit ticket, below a BUY limit. A tap or click on a tag opens
    its price menu. Escape cancels a drag. The keyboard does the same on
    the focused tag: arrows step the price, Enter amends (or stages), the
@@ -75,14 +73,6 @@ interface Options {
   system: DesignSystem;
 }
 
-/** The latest one-minute bar's time: the feed's last bar, else the session's. */
-function latestMinute(dataset: ReportDataset | null): number {
-  const samples = useFeedStore.getState().samples;
-  if (samples.length) return samples[samples.length - 1].time;
-  const rows = dataset ? tableOf(dataset, "market")?.rows ?? [] : [];
-  return rows.length ? parseExecutionTime(rows[rows.length - 1].time) : Date.now();
-}
-
 const marketOf = (view: ExecutionView) => ({ bid: view.last?.bid ?? view.bid[view.bid.length - 1], ask: view.last?.ask ?? view.ask[view.ask.length - 1] });
 
 /** This session's limit amendments laid over a view, while presenting
@@ -102,7 +92,8 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
   useLayoutEffect(() => { env.current = { dataset, vars, palette, active, placed }; }, [dataset, vars, palette, active, placed]);
 
   const chart = () => chartRef.current?.chart ?? null;
-  const priceAxis = (c: Highcharts.Chart) => c.yAxis[1];
+  /* The axis the limit is drawn on (the price pane), asked of the series itself. */
+  const priceAxis = (c: Highcharts.Chart) => (c.get("limit") as Highcharts.Series | undefined)?.yAxis ?? c.yAxis[1];
 
   const clearPreview = () => { previewEls.current.forEach((el) => el.destroy()); previewEls.current = []; };
 
@@ -216,11 +207,11 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
         return;
       }
       const current = view.pills.find((p) => p.key === "limit")?.value;
-      if (current !== undefined && snapPrice(current) === snapPrice(price)) return;
-      const checked = validateAmendment(view.order, formatPrice(price), market);
-      if (!checked.ok) { showToast(checked.error); return; }
-      orderActions.amend({ order: view.order.id, time: latestMinute(env.current.dataset), price: checked.price });
-      showToast(SAMPLE_CONFIRMATION);
+      if (!canAmend(view.order) || (current !== undefined && snapPrice(current) === snapPrice(price))) return;
+      /* A drop is a proposal: the Amend dialog opens on the dropped price and
+         the reader confirms it there (or Escape leaves the limit as it was).
+         Focus goes back to the LMT tag, the drag's keyboard twin. */
+      orderActions.openAmend(snapPrice(price), launcher ?? plotRef.current?.querySelector<HTMLElement>(".dh-order-tag-limit") ?? null);
     },
   }), [drawPreview]); // eslint-disable-line react-hooks/exhaustive-deps -- the chart is read through refs
 

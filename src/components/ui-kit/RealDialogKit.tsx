@@ -543,11 +543,29 @@ function useMenuFocus(model: KitMenuModel) {
   useReturnFocus(model.open, model.returnFocus ?? anchor);
 }
 
+/* The canvas's overlay look (--dh-exec-menu-*, chrome-tokens.css: the chart
+   rail's menus), read where the anchor sits and handed to the portalled
+   menu, so a kit menu and a rail menu are one surface in each system, light
+   and dark. An anchor outside a canvas has none: the menu keeps its own. */
+const OVERLAY_TOKENS = ["bg", "image", "border", "shadow", "backdrop", "radius", "item-radius"] as const;
+function overlayLook(anchor: HTMLElement | null): { className: string; style: React.CSSProperties } {
+  const style: Record<string, string> = {};
+  if (anchor && typeof window !== "undefined") {
+    const computed = window.getComputedStyle(anchor);
+    for (const t of OVERLAY_TOKENS) {
+      const v = computed.getPropertyValue(`--dh-exec-menu-${t}`).trim();
+      if (v) style[`--dh-exec-menu-${t}`] = v;
+    }
+  }
+  return { className: style["--dh-exec-menu-bg"] ? "dh-kit-menu dh-kit-menu-surface" : "dh-kit-menu", style: style as React.CSSProperties };
+}
+
 function SaltKitMenu({ mode, model }: Omit<MenuProps, "system">) {
+  const look = overlayLook(model.anchor);
   return (
     <SaltProvider mode={mode} applyClassesTo="scope">
       <SaltMenu open={model.open} onOpenChange={(o) => { if (!o) model.onClose(); }} getVirtualElement={() => model.anchor} placement="bottom-end">
-        <SaltMenuPanel aria-label={model.label} className="dh-kit-menu" {...ESCAPE_OWNER}>
+        <SaltMenuPanel aria-label={model.label} className={look.className} style={look.style} {...ESCAPE_OWNER}>
           {model.items.map((it) => <SaltMenuItem key={it.id} disabled={it.disabled} onClick={() => { model.onClose(); it.onSelect(); }}>{it.label}</SaltMenuItem>)}
         </SaltMenuPanel>
       </SaltMenu>
@@ -556,21 +574,23 @@ function SaltKitMenu({ mode, model }: Omit<MenuProps, "system">) {
 }
 function M3KitMenu({ mode, model }: Omit<MenuProps, "system">) {
   const theme = React.useMemo(() => createTheme({ palette: { mode } }), [mode]);
+  const look = overlayLook(model.anchor);
   return (
     <MuiThemeProvider theme={theme}>
       <MuiMenu open={model.open && Boolean(model.anchor)} anchorEl={model.anchor} onClose={model.onClose} autoFocus
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }} transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ list: { "aria-label": model.label, dense: true } as object }} className="dh-kit-menu" {...ESCAPE_OWNER}>
+        slotProps={{ list: { "aria-label": model.label, dense: true } as object, paper: { style: look.style } }} className={look.className} {...ESCAPE_OWNER}>
         {model.items.map((it) => <MuiMenuItem key={it.id} disabled={it.disabled} onClick={() => { model.onClose(); it.onSelect(); }}>{it.label}</MuiMenuItem>)}
       </MuiMenu>
     </MuiThemeProvider>
   );
 }
 function FluentKitMenu({ mode, model }: Omit<MenuProps, "system">) {
+  const look = overlayLook(model.anchor);
   return (
     <FluentProvider theme={mode === "dark" ? webDarkTheme : webLightTheme}>
       <FluentMenu open={model.open} onOpenChange={(_e, d) => { if (!d.open) model.onClose(); }} positioning={{ target: model.anchor, position: "below", align: "end" }}>
-        <FluentMenuPopover className="dh-kit-menu" {...ESCAPE_OWNER}>
+        <FluentMenuPopover className={look.className} style={look.style} {...ESCAPE_OWNER}>
           <FluentMenuList aria-label={model.label}>
             {model.items.map((it) => <FluentMenuItem key={it.id} disabled={it.disabled} onClick={() => { model.onClose(); it.onSelect(); }}>{it.label}</FluentMenuItem>)}
           </FluentMenuList>
@@ -584,12 +604,13 @@ function CarbonKitMenu({ mode, model }: Omit<MenuProps, "system">) {
   if (typeof document === "undefined") return null;
   const rect = model.anchor?.getBoundingClientRect();
   const themeClass = mode === "dark" ? "cds--g100" : "cds--white";
+  const look = overlayLook(model.anchor);
   return createPortal(
     <>
       <CarbonScopeStyles />
-      <div ref={setScope} className={`carbon-live-scope ${themeClass} dh-kit-scope`} data-carbon-theme={mode === "dark" ? "g100" : "white"} {...ESCAPE_OWNER}>
+      <div ref={setScope} className={`carbon-live-scope ${themeClass} dh-kit-scope`} data-carbon-theme={mode === "dark" ? "g100" : "white"} style={look.style} {...ESCAPE_OWNER}>
         {scope && rect ? (
-          <CarbonMenu open={model.open} label={model.label} mode="basic" size="sm" target={scope} className="dh-kit-menu"
+          <CarbonMenu open={model.open} label={model.label} mode="basic" size="sm" target={scope} className={look.className}
             x={[rect.left, rect.right]} y={[rect.top, rect.bottom]} onClose={model.onClose}>
             {model.items.map((it) => <CarbonMenuItem key={it.id} label={it.label} disabled={it.disabled} onClick={() => { model.onClose(); it.onSelect(); }} />)}
           </CarbonMenu>
@@ -613,6 +634,7 @@ function UoauiKitMenu({ mode, model }: Omit<MenuProps, "system">) {
   }, [model.open, model]);
   if (!model.open || !model.anchor || typeof document === "undefined") return null;
   const rect = model.anchor.getBoundingClientRect();
+  const look = overlayLook(model.anchor);
   const items = () => [...(list.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])') ?? [])];
   const onKey = (e: React.KeyboardEvent) => {
     const all = items();
@@ -632,8 +654,8 @@ function UoauiKitMenu({ mode, model }: Omit<MenuProps, "system">) {
   return createPortal(
     <div className="preview-uoaui a-app dh-kit-scope" {...ESCAPE_OWNER}>
       <style dangerouslySetInnerHTML={{ __html: css }} />
-      <ul ref={list} role="menu" aria-label={model.label} className="a-dropdown-menu dh-kit-menu dh-kit-menu-uoaui" onKeyDown={onKey}
-        style={{ position: "fixed", top: rect.bottom + 4, left: "auto", right: Math.max(8, window.innerWidth - rect.right) }}>
+      <ul ref={list} role="menu" aria-label={model.label} className={`a-dropdown-menu ${look.className} dh-kit-menu-uoaui`} onKeyDown={onKey}
+        style={{ ...look.style, position: "fixed", top: rect.bottom + 4, left: "auto", right: Math.max(8, window.innerWidth - rect.right) }}>
         {model.items.map((it) => (
           <li key={it.id} role="menuitem" tabIndex={-1} aria-disabled={it.disabled || undefined} className="a-dropdown-item"
             onClick={() => { if (it.disabled) return; model.onClose(); it.onSelect(); }}
