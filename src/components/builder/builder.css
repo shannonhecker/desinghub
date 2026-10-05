@@ -42,7 +42,7 @@
   --b-border2: rgba(255, 255, 255, 0.12);
   --b-fg: rgba(244, 248, 241, 0.92);
   --b-fg2: rgba(238, 242, 237, 0.64);
-  --b-fg3: rgba(238, 242, 237, 0.42);
+  --b-fg3: rgba(238, 242, 237, 0.56);
   --b-accent: #b490f5;
   --b-accent2: #c5f4de;
   --b-accent3: #d7f8e8;
@@ -116,9 +116,12 @@
    over the busy canvas needs a fully opaque surface (see its own rule below),
    not the 0.9-alpha glass used by the larger drawers/panels (which sit over a
    dimmed overlay). */
-.builder-shell.builder-shell .sessions-drawer,
-.builder-shell.builder-shell .templates-drawer,
-.builder-shell.builder-shell .export-panel {
+/* Dark chrome only (5 Oct): in light chrome each surface keeps its own
+   light rules; this group used to beat them and left dark glass under dark
+   text in the Sessions drawer. */
+.builder-shell.builder-shell:not(.builder-light) .sessions-drawer,
+.builder-shell.builder-shell:not(.builder-light) .templates-drawer,
+.builder-shell.builder-shell:not(.builder-light) .export-panel {
   border-color: rgba(255, 255, 255, 0.09);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.068), rgba(255, 255, 255, 0.026)),
@@ -143,7 +146,7 @@
   --b-border2: rgba(15, 23, 42, 0.12);
   --b-fg: rgba(15, 16, 30, 0.9);
   --b-fg2: rgba(15, 16, 30, 0.62);
-  --b-fg3: rgba(15, 16, 30, 0.42);
+  --b-fg3: rgba(15, 16, 30, 0.6);
   --b-accent-glow: rgba(180, 144, 245, 0.12);
 }
 
@@ -1323,7 +1326,7 @@
   font-style: italic;
   line-height: 1.4;
 }
-.builder-light .preview-bar-overflow-hint { color: rgba(0, 0, 0, 0.5); }
+.builder-light .preview-bar-overflow-hint { color: var(--bc-fg-muted); }
 
 .top-bar-btn.icon-only {
   padding: 0;
@@ -2144,26 +2147,33 @@
    Mirrors TemplatesDrawer but on the left, with session rows
    instead of template cards.
    ══════════════════════════════════════════════════════════ */
+/* Sessions drawer (5 Oct, light-mode fix). The drawer follows the chrome's
+   mode from the --bc-* tokens: in light a raised white surface with dark
+   text, in dark the glass surface the dark-only group above keeps. Tone, not
+   outlines: tonal rows, a tonal primary action, hover and selected as fills,
+   the keyboard focus ring as the one outline. Text sits on --bc-fg and
+   --bc-fg-muted (both over 4.5:1 in either mode); icons and the selected
+   marker on --bc-fg-muted or the selected foreground (over 3:1). */
 .sessions-drawer-overlay {
   position: fixed;
   inset: 0;
   z-index: 80;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: var(--bc-overlay);
+  backdrop-filter: blur(var(--bc-scrim-blur));
   display: flex;
   justify-content: flex-start;
-  animation: drawer-overlay-in 0.15s ease-out;
+  animation: drawer-overlay-in var(--bc-duration-medium) var(--bc-ease);
 }
 .sessions-drawer {
   width: min(360px, 85vw);
   height: 100%;
-  background: var(--b-bg, #0b1120);
-  color: var(--b-fg);
-  border-right: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
-  box-shadow: 24px 0 48px rgba(0, 0, 0, 0.5);
+  background: var(--bc-bg-raised);
+  color: var(--bc-fg);
+  border-right: var(--bc-hairline) solid var(--bc-border);
+  box-shadow: var(--bc-shadow-lg);
   display: flex;
   flex-direction: column;
-  animation: sessions-drawer-slide-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: sessions-drawer-slide-in var(--bc-duration-medium) var(--bc-ease);
   overflow: hidden;
 }
 @keyframes sessions-drawer-slide-in {
@@ -2175,9 +2185,9 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 20px 22px 16px;
-  border-bottom: 1px solid var(--b-border2);
+  gap: var(--bc-gap-md);
+  padding: var(--bc-gap-lg) var(--bc-panel-inset) var(--bc-gap-md);
+  border-bottom: var(--bc-hairline) solid var(--bc-border);
   flex-shrink: 0;
 }
 .sessions-drawer-title {
@@ -2185,10 +2195,11 @@
   font-weight: 700;
   letter-spacing: -0.015em;
   margin: 0 0 3px;
+  color: var(--bc-fg);
 }
 .sessions-drawer-subtitle {
   font-size: 12px;
-  color: var(--b-fg3, rgba(255, 255, 255, 0.55));
+  color: var(--bc-fg-muted);
   margin: 0;
   line-height: 1.5;
 }
@@ -2198,18 +2209,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  border: 1px solid var(--b-border2);
+  border-radius: var(--bc-radius-sm);
+  border: 0;
   background: transparent;
-  color: var(--b-fg);
+  color: var(--bc-fg-muted);
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
   flex-shrink: 0;
 }
 .sessions-drawer-close:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg);
+}
+.sessions-drawer-close:focus-visible,
+.sessions-new-btn:focus-visible,
+.sessions-row-main:focus-visible,
+.sessions-row-action:focus-visible {
+  outline: 2px solid var(--bc-accent);
+  outline-offset: 1px;
 }
 .sessions-drawer-close .material-symbols-outlined {
   font-size: 16px !important;
@@ -2220,21 +2238,20 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin: 14px 18px 10px;
+  margin: var(--bc-gap-md) var(--bc-panel-inset) var(--bc-gap-sm);
   padding: 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(126, 107, 196, 0.35);
-  background: rgba(126, 107, 196, 0.15);
-  color: var(--b-fg);
+  border-radius: var(--bc-radius-md);
+  border: 0;
+  background: var(--bc-gallery-tonal);
+  color: var(--bc-fg);
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
 }
 .sessions-new-btn:hover {
-  background: rgba(126, 107, 196, 0.25);
-  border-color: rgba(126, 107, 196, 0.55);
+  background: var(--bc-gallery-tonal-hover);
 }
 .sessions-new-btn .material-symbols-outlined {
   font-size: 18px !important;
@@ -2242,7 +2259,7 @@
 
 .sessions-search {
   position: relative;
-  margin: 0 18px 8px;
+  margin: 0 var(--bc-panel-inset) var(--bc-gap-sm);
 }
 .sessions-search-icon {
   position: absolute;
@@ -2250,76 +2267,80 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 14px !important;
-  color: var(--b-fg3);
+  color: var(--bc-fg-muted);
 }
 .sessions-search-input {
   width: 100%;
   padding: 7px 10px 7px 30px;
-  border-radius: 8px;
-  border: 1px solid var(--b-border2);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--b-fg);
+  border-radius: var(--bc-radius-sm);
+  border: 0;
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg);
   font-family: inherit;
   font-size: 12px;
 }
+.sessions-search-input::placeholder { color: var(--bc-fg-muted); }
 .sessions-search-input:focus {
   outline: none;
-  border-color: rgba(126, 107, 196, 0.5);
+  box-shadow: 0 0 0 2px var(--bc-accent);
 }
 
 .sessions-list {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 12px 14px;
+  padding: var(--bc-gap-xs) var(--bc-gap-sm) var(--bc-gap-lg);
 }
 .sessions-empty {
   padding: 32px 16px;
   text-align: center;
   font-size: 12px;
-  color: var(--b-fg3);
-  font-style: italic;
+  color: var(--bc-fg-muted);
   line-height: 1.5;
 }
 .sessions-empty--error {
-  color: rgba(248, 113, 113, 0.9);
+  color: var(--bc-danger);
 }
 
 .sessions-row {
   display: flex;
   align-items: stretch;
-  border-radius: 8px;
-  transition: background 0.15s;
+  border-radius: var(--bc-radius-sm);
+  transition: background var(--bc-duration-fast) var(--bc-ease);
   margin: 2px 0;
 }
 .sessions-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bc-bg-hover);
 }
 .sessions-row.is-active {
-  background: rgba(126, 107, 196, 0.15);
+  background: var(--bc-gallery-selected);
+}
+.sessions-row.is-active .sessions-row-title,
+.sessions-row.is-active .sessions-row-timestamp {
+  color: var(--bc-gallery-selected-fg);
 }
 .sessions-row-main {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--bc-gap-sm);
   padding: 8px 10px;
   border: 0;
   background: transparent;
-  color: var(--b-fg);
+  color: var(--bc-fg);
   font-family: inherit;
   text-align: left;
   cursor: pointer;
   min-width: 0;
-  border-radius: 8px;
+  border-radius: var(--bc-radius-sm);
 }
 .sessions-row-main:disabled { cursor: text; }
 .sessions-row-icon {
   font-size: 14px !important;
-  color: var(--b-fg3);
+  color: var(--bc-fg-muted);
   flex-shrink: 0;
 }
 .sessions-row.is-active .sessions-row-icon {
-  color: rgba(126, 107, 196, 0.95);
+  color: var(--bc-gallery-selected-fg);
 }
 .sessions-row-title {
   flex: 1;
@@ -2335,16 +2356,17 @@
   font-family: inherit;
   font-size: 13px;
   padding: 2px 6px;
-  border: 1px solid rgba(126, 107, 196, 0.5);
-  border-radius: 4px;
-  background: var(--b-bg);
-  color: var(--b-fg);
+  border: 0;
+  border-radius: var(--bc-radius-xs);
+  background: var(--bc-bg-raised);
+  color: var(--bc-fg);
   min-width: 0;
+  box-shadow: 0 0 0 2px var(--bc-accent);
 }
-.sessions-row-rename-input:focus { outline: none; border-color: rgba(126, 107, 196, 0.85); }
+.sessions-row-rename-input:focus { outline: none; }
 .sessions-row-timestamp {
-  font-size: 10.5px;
-  color: var(--b-fg3);
+  font-size: 11px;
+  color: var(--bc-fg-muted);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -2354,9 +2376,10 @@
   gap: 2px;
   padding-right: 6px;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity var(--bc-duration-fast) var(--bc-ease);
 }
 .sessions-row:hover .sessions-row-actions,
+.sessions-row:focus-within .sessions-row-actions,
 .sessions-row.is-active .sessions-row-actions {
   opacity: 1;
 }
@@ -2367,48 +2390,23 @@
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--bc-radius-sm);
   background: transparent;
-  color: var(--b-fg3);
+  color: var(--bc-fg-muted);
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
 }
 .sessions-row-action:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--b-fg);
+  background: var(--bc-bg-active);
+  color: var(--bc-fg);
 }
 .sessions-row-action--danger:hover {
-  background: rgba(248, 113, 113, 0.15);
-  color: rgba(248, 113, 113, 0.95);
+  color: var(--bc-danger);
 }
 .sessions-row-action .material-symbols-outlined {
   font-size: 14px !important;
 }
-
-/* Light mode */
-.builder-light .sessions-drawer {
-  background: #ffffff;
-  border-right-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 24px 0 48px rgba(0, 0, 0, 0.18);
-}
-.builder-light .sessions-drawer-close {
-  border-color: rgba(0, 0, 0, 0.1);
-}
-.builder-light .sessions-drawer-close:hover {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.18);
-}
-.builder-light .sessions-new-btn {
-  background: rgba(126, 107, 196, 0.1);
-  border-color: rgba(126, 107, 196, 0.35);
-  color: #3a2d75;
-}
-.builder-light .sessions-new-btn:hover {
-  background: rgba(126, 107, 196, 0.18);
-}
-.builder-light .sessions-row:hover { background: rgba(0, 0, 0, 0.04); }
-.builder-light .sessions-row.is-active { background: rgba(126, 107, 196, 0.08); }
 
 /* ══════════════════════════════════════════════════════════
    Save indicator - calm badge in the top bar showing auto-save
@@ -8478,7 +8476,9 @@ th[class*="-th"] > span { vertical-align: middle; }
 }
 .swap-menu-item .material-symbols-outlined {
   font-size: 16px;
-  color: var(--ds-primary);
+  /* Secondary foreground, not the brand colour: the accent sat under 3:1
+     on the dark canvas (5 Oct light-chrome audit). */
+  color: var(--ds-fg-secondary, var(--ds-fg));
 }
 
 /* Add block button */
@@ -9652,7 +9652,7 @@ th[class*="-th"] > span { vertical-align: middle; }
   color: rgba(15, 16, 30, 0.5);
 }
 .context-menu-item.is-danger {
-  color: #f46a6a;
+  color: var(--bc-danger);
 }
 .context-menu-item.is-danger.is-active,
 .context-menu-item.is-danger:hover:not(.is-disabled) {
@@ -9798,6 +9798,10 @@ th[class*="-th"] > span { vertical-align: middle; }
   transition: background 0.12s, color 0.12s;
   text-align: left;
 }
+/* Light chrome: the lavender accent sits under 3:1 on the light panel, so
+   the zone and category icons take the muted foreground (5 Oct audit). */
+.builder-light .lib-zone-icon,
+.builder-light .lib-category-icon { color: var(--bc-fg-muted); }
 .builder-light .lib-category-head {
   background: rgba(255, 255, 255, 0.92);
 }
@@ -10404,7 +10408,7 @@ th[class*="-th"] > span { vertical-align: middle; }
 .builder-light .preview-bar-overflow-soon {
   background: rgba(0, 0, 0, 0.05);
   border-color: rgba(0, 0, 0, 0.12);
-  color: rgba(0, 0, 0, 0.55);
+  color: var(--bc-fg-muted);
 }
 .preview-bar-overflow-item.preview-bar-overflow-item-active {
   background: rgba(126, 107, 196, 0.14);
