@@ -1007,7 +1007,7 @@ function SimulatedTextInputBlock({
             type="text"
             className={`${prefix}-input`}
             placeholder={placeholder}
-            value={value || undefined}
+            value={value}
             disabled={disabled}
             aria-invalid={validationStatus === "error" || undefined}
             style={fieldState}
