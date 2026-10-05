@@ -11410,7 +11410,8 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .dh-kit-choice .cds--tile { flex: 1 1 0; min-width: 0; height: auto; min-height: var(--dh-kit-tile-h); }
 .dh-kit-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--dh-kit-gap-tight); line-height: 1; padding-block: var(--dh-kit-gap-tight); }
 .dh-kit-sr { position: absolute; width: var(--dh-order-px); height: var(--dh-order-px); margin: calc(-1 * var(--dh-order-px)); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.dh-kit-tile-caption { font-size: var(--dh-kit-tile-caption); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; }
+/* The caption is quieter by size and case only: dimmed, it fell under AA on an unselected tile. */
+.dh-kit-tile-caption { font-size: var(--dh-kit-tile-caption); letter-spacing: 0.06em; text-transform: uppercase; }
 .dh-kit-tile-quote { display: inline-flex; align-items: baseline; font-size: var(--dh-kit-tile-quote); font-variant-numeric: tabular-nums; text-transform: none; }
 .dh-kit-tile-quote strong,
 .dh-kit-scope .dh-kit-tile .dh-kit-tile-quote strong { font-size: var(--dh-kit-tile-pips); font-weight: 700; letter-spacing: -0.01em; }
@@ -11441,6 +11442,8 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .saltDialog.dh-kit-dialog { max-height: calc(100dvh - 2 * var(--bc-gutter-narrow)); }
 /* Salt: room between a label and its field, so the field's focus ring does not cut the label. */
 .saltDialog.dh-kit-dialog .saltFormFieldLabel { margin-block-end: var(--dh-kit-gap-tight); }
+/* Carbon: Compare has no fields to clear below it, so its chart keeps the room. */
+.dh-kit-scope .cds--modal.dh-kit-compare .cds--modal-content { margin-block-end: var(--dh-kit-gap); }
 /* Carbon: the invalid mark sits at the field's start, clear of a right-aligned number. */
 .dh-kit-scope .dh-kit-cell .cds--text-input__field-wrapper { position: relative; }
 .dh-kit-scope .dh-kit-cell .cds--text-input__field-wrapper .cds--text-input__invalid-icon { position: absolute; inset-block-start: 50%; inset-inline: auto 1rem; inline-size: 1rem; block-size: 1rem; transform: translateY(-50%); }
@@ -11475,6 +11478,14 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .dh-kit-menu-uoaui .a-dropdown-item[aria-disabled="true"] { opacity: 0.5; cursor: default; }
 .dh-kit-menu-uoaui .a-dropdown-item:focus-visible { outline: var(--dh-focus-ring) solid currentColor; outline-offset: calc(-1 * var(--dh-focus-ring)); }
 .dh-kit-fluent-small { max-width: var(--dh-kit-uoaui-w-small); }
+/* Fluent: the chosen side wears Fluent's own brand selected tone (its
+   neutral selected tone barely reads in dark). */
+.fui-ToggleButton.dh-kit-tile-btn[aria-pressed="true"],
+.fui-ToggleButton.dh-kit-tile-btn[aria-pressed="true"]:hover {
+  background-color: var(--colorBrandBackgroundSelected);
+  border-color: transparent;
+  color: var(--colorNeutralForegroundOnBrand);
+}
 /* Fluent: its actions sit a full gap below the last field. */
 .fui-DialogBody .dh-kit-body { padding-block-end: calc(var(--dh-kit-gap) / 2); }
 /* Carbon: the close button is its 3rem square in the corner (the tooltip

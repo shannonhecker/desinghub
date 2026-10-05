@@ -346,7 +346,7 @@ function M3KitDialog({ mode, model }: Omit<DialogProps, "system">) {
 const fluentParts: Parts = {
   choice: (c) => (
     <div role="group" aria-label={c.label} className="dh-kit-tiles">
-      {c.options.map((o) => <FluentToggleButton key={o.value} checked={o.value === c.value} appearance={o.value === c.value ? "primary" : "secondary"} onClick={() => c.onChange(o.value)} className="dh-kit-tile-btn"><TileFace o={o} /></FluentToggleButton>)}
+      {c.options.map((o) => <FluentToggleButton key={o.value} checked={o.value === c.value} onClick={() => c.onChange(o.value)} className="dh-kit-tile-btn"><TileFace o={o} /></FluentToggleButton>)}
     </div>
   ),
   field: (f) => (
@@ -414,7 +414,7 @@ const carbonParts: Parts = {
         onChange={f.kind === "text" ? (e) => f.onChange(e.target.value) : undefined} onBlur={f.kind === "text" ? f.onBlur : undefined} />
     ),
   table: (t) => (
-    <CarbonTable size="sm" aria-label={t.caption}>
+    <CarbonTable size="xs" aria-label={t.caption}>
       <CarbonTableHead><CarbonTableRow>{t.columns.map((c, i) => <CarbonTableHeader key={i}>{c}</CarbonTableHeader>)}</CarbonTableRow></CarbonTableHead>
       <CarbonTableBody>{t.rows.map((r, i) => <CarbonTableRow key={i}>{r.cells.map((c, j) => <CarbonTableCell key={j} className={j ? toneClass(r.tones?.[j - 1]) : undefined}>{c}</CarbonTableCell>)}</CarbonTableRow>)}</CarbonTableBody>
     </CarbonTable>
