@@ -12,6 +12,11 @@ import { GuidanceCards } from "./ui-kit/GuidanceCards";
 import { TokenSwatches } from "./ui-kit/TokenSwatches";
 import { AnatomyDiagram } from "./ui-kit/AnatomyDiagram";
 import { VariantExample } from "./ui-kit/VariantExample";
+import { Playground } from "./ui-kit/Playground";
+import { CompareView } from "./ui-kit/CompareView";
+import { useEdgeFade, revealInline } from "./ui-kit/useEdgeFade";
+import { COMPONENT_SUBCATS } from "@/data/componentCategories";
+import { getUiKitGroup } from "./ui-kit/uiKitGroups";
 import {
   COMPONENT_VARIANTS,
   COMPONENT_GUIDANCE,
@@ -41,7 +46,7 @@ const ChartsPage = dynamic(() => import("./ChartsPage").then((m) => m.ChartsPage
    Anything not in the map simply renders the Specimen + Code sections (the
    premium sections are null-guarded everywhere they're consumed).
    ════════════════════════════════════════════════════════════════════ */
-const META_ID: Record<string, UiKitComponentId> = {
+export const META_ID: Record<string, UiKitComponentId> = {
   // Button
   buttons: "button",
   button: "button",
@@ -93,6 +98,32 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
      per-DS custom properties off this node (the DS CSS declares them on a scoped
      selector, so resolving off :root in the document head would miss them). */
   const scopeRef = React.useRef<HTMLDivElement | null>(null);
+  /* The tab strip scrolls on narrow screens: fade the edge it continues
+     past, and keep the selected tab in view (a shared link to Compare on a
+     phone must not open with its tab off screen). */
+  const tabsEl = React.useRef<HTMLDivElement | null>(null);
+  const tabsFade = useEdgeFade<HTMLDivElement>();
+  const tabsRef = React.useCallback((el: HTMLDivElement | null) => { tabsEl.current = el; tabsFade(el); }, [tabsFade]);
+  React.useEffect(() => {
+    const el = tabsEl.current;
+    revealInline(el, el?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]') ?? null);
+  }, [activeTab, activeSystem, componentId]);
+  /* The strip sticks to the top of the scroller. Only then does it take a
+     backdrop, so page content passing under it stays readable; at rest it is
+     just the pill group on the page. A one-pixel sentinel above it tells the
+     two states apart. */
+  const sentinelRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    const mark = sentinelRef.current;
+    const el = tabsEl.current;
+    if (!mark || !el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => {
+      const above = !entry.isIntersecting && entry.boundingClientRect.top < (entry.rootBounds?.top ?? 0) + 1;
+      if (above) el.setAttribute("data-stuck", ""); else el.removeAttribute("data-stuck");
+    }, { root: mark.closest('[data-testid="kit-scroller"]'), threshold: 0 });
+    io.observe(mark);
+    return () => io.disconnect();
+  }, [componentId, activeSystem]);
   if (!comp) return null;
 
   const densityOrSize = activeSystem === "salt" ? store.salt.density
@@ -145,91 +176,13 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
      their own single-pane render (no detail sections / TOC). */
   const isToolPage = componentId === "charts" || componentId === "ag-grid";
 
-  /* ── Carbon: preserve the authentic 5-tab carbondesignsystem.com layout. ── */
-  if (isCarbon && !isToolPage) {
-    const visibleTabs = carbonTabs;
-    const currentTab: typeof visibleTabs[number] =
-      (visibleTabs as readonly string[]).includes(activeTab as string)
-        ? (activeTab as typeof visibleTabs[number])
-        : "preview";
-    return (
-      <div style={{ padding: `${pad}px ${pad + 8}px`, fontFamily: t.font, color: t.fg }}>
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 32, fontWeight: 700, color: t.fg, marginBottom: 8 }}>{comp.name}</h1>
-          <p style={{ fontSize: 15, color: t.fg3, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
-        </div>
-        <div role="tablist" aria-label="Component view" style={{
-          display: "flex", borderBottom: `1px solid ${t.border}`, marginBottom: 32,
-        }}>
-          {visibleTabs.map((tab) => {
-            const active = currentTab === tab;
-            const label = tab === "preview" ? "Overview"
-              : tab === "code" ? "Code"
-              : tab === "usage" ? "Usage"
-              : tab === "style" ? "Style"
-              : "Accessibility";
-            return (
-              <button
-                key={tab}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setActiveTab(tab)}
-                style={{
-                  position: "relative", height: 40, padding: "10px 16px", border: 0,
-                  background: "transparent", cursor: "pointer", fontSize: 14,
-                  fontWeight: active ? 600 : 400, fontFamily: t.font,
-                  color: active ? t.fg : t.fg2,
-                  borderBottom: active ? `2px solid ${t.accent}` : "2px solid transparent",
-                  marginBottom: -1, transition: "color 70ms cubic-bezier(0.2, 0, 0.38, 0.9)",
-                }}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-        {currentTab === "code" ? (
-          <CodePanel componentId={componentId} />
-        ) : currentTab === "usage" ? (
-          <CarbonDocStub title="Usage" componentId={componentId} sectionSlug="usage" body={
-            `${comp.name} is for ${comp.desc.toLowerCase()} Use it when the interaction calls for ${comp.cat.toLowerCase()} guidance. For the full usage rules, anatomy, and do/don't examples, see the official ${comp.name} usage page on carbondesignsystem.com.`
-          } t={t} />
-        ) : currentTab === "style" ? (
-          <CarbonDocStub title="Style" componentId={componentId} sectionSlug="style" body={
-            `Exact sizing, spacing, and typography specs for ${comp.name} live in the Style tab on carbondesignsystem.com. The demo in Overview is built with the same token set (see Code tab for the @carbon/react import).`
-          } t={t} />
-        ) : currentTab === "accessibility" ? (
-          <CarbonDocStub title="Accessibility" componentId={componentId} sectionSlug="accessibility" body={
-            `${comp.name} ships with WCAG 2.1 AA compliance. Focus rings, keyboard navigation, and ARIA semantics are documented on the Accessibility tab on carbondesignsystem.com.`
-          } t={t} />
-        ) : (
-          <div
-            className={`cds--${store.carbon.themeKey}`}
-            style={{
-              background: t.T.layer01, borderRadius: 0,
-              border: `1px solid ${t.border}`, padding: pad, color: t.fg,
-            }}
-          >
-            <style dangerouslySetInnerHTML={{ __html: css }} />
-            {DemoComponent ? <DemoComponent /> : (
-              <div style={{ padding: pad, borderRadius: 8, border: `1px dashed ${t.border}`,
-                display: "flex", alignItems: "center", justifyContent: "center", color: t.fg2, fontSize: t.scale.navF }}>
-                Demo loading...
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   /* ── Tool pages (Charts / ag-grid): single-pane, no detail sections. ── */
   if (isToolPage) {
     return (
       <div style={{ padding: `${pad}px ${pad + 8}px`, fontFamily: t.font, color: t.fg }}>
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: t.fg, marginBottom: 8 }}>{comp.name}</h1>
-          <p style={{ fontSize: 15, color: t.fg3, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
+          <p style={{ fontSize: 15, color: t.fg2, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
         </div>
         {componentId === "charts"
           ? <ChartsPage />
@@ -260,85 +213,23 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const specimenSection = (
     <section id="dh-sec-specimen" className="dh-section" aria-labelledby="dh-h-overview">
       <h2 id="dh-h-overview" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}>Overview</h2>
-      <div
-        style={{
-          position: "relative",
-          borderRadius: heroRadius,
-          border: `1px solid ${t.border}`,
-          background: heroSurface,
-          overflow: "hidden",
-          padding: "60px 48px",
-          minHeight: 248,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {/* m3-signature dotted-grid texture, faded at the edges */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            backgroundImage: `radial-gradient(color-mix(in srgb, ${t.fg} 14%, transparent) 1px, transparent 1.4px)`,
-            backgroundSize: "18px 18px",
-            backgroundPosition: "center",
-            maskImage: "radial-gradient(120% 100% at 50% 50%, #000 52%, transparent 90%)",
-            WebkitMaskImage: "radial-gradient(120% 100% at 50% 50%, #000 52%, transparent 90%)",
-          }}
-        />
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            background: `radial-gradient(130% 120% at 50% -10%, color-mix(in srgb, ${t.accent} 18%, transparent), transparent 62%)`,
-          }}
-        />
+      {/* The live demo at its real size, centred on a tonal stage. The
+          scope classes are the system's own, so its CSS resolves as shipped
+          (Carbon's theme class, uoaui's app class). */}
+      <div className="kit-hero" data-testid="detail-stage">
         <div
           ref={scopeRef}
-          className={isUoaui ? "preview-uoaui a-app" : undefined}
-          style={{
-            position: "relative",
-            display: "flex",
-            gap: 16,
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "center",
-            transform: "scale(1.2)",
-            color: t.fg,
-          }}
+          key={activeSystem}
+          className={`kit-hero-inner${isUoaui ? " preview-uoaui a-app" : isCarbon ? ` cds--${store.carbon.themeKey}` : ""}`}
+          style={{ color: t.fg }}
         >
           <style dangerouslySetInnerHTML={{ __html: css }} />
-          {DemoComponent ? <DemoComponent /> : (
-            <div style={{ padding: pad, borderRadius: 8, border: `1px dashed ${t.border}`,
-              display: "flex", alignItems: "center", justifyContent: "center", color: t.fg2, fontSize: t.scale.navF }}>
-              Demo loading...
-            </div>
-          )}
+          {DemoComponent ? <DemoComponent /> : <p style={{ margin: 0, color: t.fg2 }}>No live demo for this entry.</p>}
         </div>
       </div>
-      <div style={{ marginTop: 24, display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {[comp.cat, "WCAG 2.1 AA", "Keyboard operable"].filter(Boolean).map((chip) => (
-          <span
-            key={chip as string}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              height: 30,
-              padding: "0 14px",
-              borderRadius: 999,
-              border: `1px solid ${t.border}`,
-              background: t.bg,
-              color: t.fg2,
-              font: `500 12.5px/1 ${t.font}`,
-              letterSpacing: 0.1,
-            }}
-          >
-            {chip as string}
-          </span>
+      <div className="kit-chips">
+        {[comp.cat === "Components & Patterns" ? (COMPONENT_SUBCATS[componentId] ?? "Component") : comp.cat].map((chip) => (
+          <span key={chip}>{chip}</span>
         ))}
       </div>
       {(() => {
@@ -347,7 +238,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         return (
           <div style={{ marginTop: 44 }}>
             <h3 style={{ margin: "0 0 4px", color: t.fg, font: `600 18px/1.2 ${t.font}` }}>Variants</h3>
-            <p style={{ margin: "0 0 20px", color: t.fg3, font: `400 14px/1.5 ${t.font}` }}>
+            <p style={{ margin: "0 0 20px", color: t.fg2, font: `400 14px/1.5 ${t.font}` }}>
               {/* Chips are types with distinct jobs, badges signal status; neither is an emphasis ladder. */}
               {metaId === "chip"
                 ? `The ${["zero", "one", "two", "three", "four", "five", "six"][naming.length] ?? naming.length} chip types, each shaped for a different job.`
@@ -361,7 +252,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
               gap: 12,
             }}>
               {naming.map((v, i) => (
-                <div key={v.name} style={{ flex: "1 1 300px", minWidth: 280, background: t.bg, border: `1px solid ${t.border}`, borderRadius: 14, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 9 }}>
+                <div key={v.name} className="kit-panel" style={{ flex: "1 1 300px", minWidth: 260, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 9 }}>
                   {/* live, component-appropriate example of this variant */}
                   <div style={{ alignSelf: "flex-start", marginBottom: 4 }}>
                     <VariantExample componentId={metaId} style={v.style} label={v.name} t={t} />
@@ -376,7 +267,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
                   </div>
                   <p style={{ margin: 0, color: t.fg2, font: `400 13px/1.5 ${t.font}` }}>{v.desc}</p>
                   <div style={{ marginTop: 2, paddingTop: 11, borderTop: `1px solid ${t.border}` }}>
-                    <span style={{ display: "block", color: t.fg3, font: `700 10px/1 ${t.font}`, letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>Use when</span>
+                    <span style={{ display: "block", color: t.fg2, font: `700 10px/1 ${t.font}`, letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>Use when</span>
                     <span style={{ color: t.fg2, font: `400 13px/1.55 ${t.font}` }}>{v.use}</span>
                   </div>
                 </div>
@@ -389,22 +280,12 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   );
   const variantsSection = variants ? (
     <section id="dh-sec-variants" className="dh-section" aria-labelledby="dh-h-variants">
-      <h2 id="dh-h-variants" className="dh-section-h" style={{ color: t.fg }}>Variants</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+      <h2 id="dh-h-variants" className="dh-section-h" style={{ color: t.fg }}>States</h2>
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
         The {comp.name.toLowerCase()} vocabulary this design system exposes, by{" "}
         {variants.variantAxisLabel.toLowerCase()} and {variants.stateAxisLabel.toLowerCase()}.
       </p>
-      <div style={{
-        position: "relative", borderRadius: heroRadius, border: `1px solid ${t.border}`,
-        background: heroSurface, padding: "32px 28px", overflow: "hidden",
-      }}>
-        <div aria-hidden style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          backgroundImage: `radial-gradient(color-mix(in srgb, ${t.fg} 12%, transparent) 1px, transparent 1.4px)`,
-          backgroundSize: "18px 18px", backgroundPosition: "center",
-          maskImage: "radial-gradient(130% 110% at 50% 50%, #000 60%, transparent 95%)",
-          WebkitMaskImage: "radial-gradient(130% 110% at 50% 50%, #000 60%, transparent 95%)",
-        }} />
+      <div className="kit-panel" style={{ position: "relative", padding: 8, overflow: "auto" }}>
         <div style={{ position: "relative" }}>
           <VariantsMatrix matrix={variants} componentId={metaId as UiKitComponentId} system={ds}
             mode={matrixMode} saltDensity={matrixDensity} Demo={DemoComponent} t={t} />
@@ -419,7 +300,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const anatomySection = anatomy ? (
     <section id="dh-sec-anatomy" className="dh-section" aria-labelledby="dh-h-anatomy">
       <h2 id="dh-h-anatomy" className="dh-section-h" style={{ color: t.fg }}>Anatomy</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
         The parts of the {comp.name.toLowerCase()} and their key measurements.
       </p>
       <AnatomyDiagram anatomy={anatomy} t={t} componentId={metaId} />
@@ -428,16 +309,16 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const propsSection = propRows ? (
     <section id="dh-sec-props" className="dh-section" aria-labelledby="dh-h-props">
       <h2 id="dh-h-props" className="dh-section-h" style={{ color: t.fg }}>Props</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
         The real {comp.name.toLowerCase()} API for this design system. Prop names and
         defaults follow the official package, not a normalised abstraction.
       </p>
-      <div className="dh-detail-card" style={{ borderColor: t.border, background: t.bg2 }}>
+      <div className="dh-detail-card kit-panel" style={{ borderColor: "transparent" }}>
         <table className="dh-props" style={{ fontFamily: t.font }}>
           <thead>
             <tr style={{ borderBottomColor: t.borderSubtle }}>
               {["Prop", "Type", "Default", "Description"].map((h) => (
-                <th key={h} scope="col" className="dh-props-h" style={{ color: t.fg3 }}>{h}</th>
+                <th key={h} scope="col" className="dh-props-h" style={{ color: t.fg2 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -446,7 +327,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
               <tr key={p.name} style={{ borderBottomColor: t.borderSubtle }}>
                 <td className="dh-props-cell dh-props-name" style={{ color: t.fg }}>{p.name}</td>
                 <td className="dh-props-cell dh-props-type" style={{ color: t.accentText }}>{p.type}</td>
-                <td className="dh-props-cell dh-props-default" style={{ color: t.fg3 }}>{p.default}</td>
+                <td className="dh-props-cell dh-props-default" style={{ color: t.fg2 }}>{p.default}</td>
                 <td className="dh-props-cell" style={{ color: t.fg2 }}>{p.description}</td>
               </tr>
             ))}
@@ -470,7 +351,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const tokensSection = (tokens && tokens.length > 0) ? (
     <section id="dh-sec-tokens" className="dh-section" aria-labelledby="dh-h-tokens">
       <h2 id="dh-h-tokens" className="dh-section-h" style={{ color: t.fg }}>Tokens</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
         The design tokens that drive this {comp.name.toLowerCase()}. Values resolve live
         against the current theme, mode, and density.
       </p>
@@ -499,7 +380,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const accessibilitySection = a11y ? (
     <section id="dh-sec-accessibility" className="dh-section" aria-labelledby="dh-h-accessibility">
       <h2 id="dh-h-accessibility" className="dh-section-h" style={{ color: t.fg }}>Accessibility</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
         How the {comp.name.toLowerCase()} behaves with the keyboard and assistive
         technology in this design system.
       </p>
@@ -545,92 +426,99 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   ) : (
     <section id="dh-sec-accessibility" className="dh-section" aria-labelledby="dh-h-accessibility">
       <h2 id="dh-h-accessibility" className="dh-section-h" style={{ color: t.fg }}>Accessibility</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
-        {comp.name} follows WCAG 2.1 AA: it is keyboard operable, exposes a visible focus
-        state, and is labelled for assistive technology. Full keyboard + screen-reader
-        guidance lands in a later pass.
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
+        A keyboard map and screen reader notes are written for the core components. There
+        are none for {comp.name.toLowerCase()} yet; use the system's own documentation for its
+        keyboard and ARIA behaviour.
       </p>
     </section>
   );
 
-  /* ── Rich tabbed layout (Overview / Specs / Guidelines / Accessibility),
-     modelled on m3.material.io, for every non-Carbon DS. Self-contained +
-     full-width (no external TOC). Skins entirely from the active theme `t`,
-     so each DS reads as ITSELF (Salt looks Salt, Fluent looks Fluent, …) —
-     the shell carries no DS-specific colour. ── */
-  if (["m3", "salt", "fluent", "uoaui"].includes(activeSystem)) {
-    const M3_TABS = [
-      ["overview", "Overview"],
-      ["specs", "Specs"],
-      ["guidelines", "Guidelines"],
-      ["accessibility", "Accessibility"],
-    ] as const;
-    const m3Tab = (M3_TABS as readonly (readonly string[])[]).some((x) => x[0] === activeTab)
-      ? (activeTab as string)
-      : "overview";
-    return (
-      <div className="dh-detail" style={{ fontFamily: t.font, color: t.fg }}>
-        <header className="dh-detail-header">
-          <h1 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h1>
-          <p className="dh-detail-desc" style={{ color: t.fg3 }}>{comp.desc}</p>
-        </header>
-        {/* M3 pill tab bar */}
-        <div role="tablist" aria-label="Component view" style={{
-          display: "flex", gap: 4, padding: 4, marginBottom: 32, width: "fit-content",
-          background: t.bg2, borderRadius: 999, border: `1px solid ${t.border}`,
-        }}>
-          {M3_TABS.map(([id, label]) => {
-            const active = m3Tab === id;
-            return (
-              <button
-                key={id}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setActiveTab(id)}
-                style={{
-                  height: 36, padding: "0 18px", border: 0, borderRadius: 999, cursor: "pointer",
-                  fontSize: 14, fontFamily: t.font, fontWeight: active ? 600 : 500,
-                  background: active ? t.bg : "transparent",
-                  color: active ? t.fg : t.fg2,
-                  boxShadow: active ? "0 1px 3px rgba(0,0,0,0.14)" : "none",
-                  transition: "background 120ms, color 120ms",
-                }}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-        {m3Tab === "overview" && specimenSection}
-        {m3Tab === "specs" && <>{variantsSection}{anatomySection}{propsSection}{tokensSection}{codeSection}</>}
-        {m3Tab === "guidelines" && (guidanceSection ?? (
-          <p className="dh-section-lede" style={{ color: t.fg3 }}>
-            Usage guidance for the {comp.name.toLowerCase()} lands in a later pass.
-          </p>
-        ))}
-        {m3Tab === "accessibility" && accessibilitySection}
-      </div>
-    );
-  }
+  /* ════════════════════════════════════════════════════════════════════
+     ONE DETAIL ANATOMY FOR ALL FIVE SYSTEMS.
+     Overview (stage, playground, variants) / Specs (states, anatomy, props,
+     tokens) / Code / Guidelines / Accessibility / Compare. The tab ids are
+     the same in every system, so a system switch keeps the tab. Only the
+     chrome is shared; everything inside a stage is the system's own.
+     ════════════════════════════════════════════════════════════════════ */
+  const TABS = [
+    ["overview", "Overview"],
+    ["specs", "Specs"],
+    ["code", "Code"],
+    ["guidelines", "Guidelines"],
+    ["accessibility", "Accessibility"],
+    ["compare", "Compare"],
+  ] as const;
+  const tab = TABS.some((x) => x[0] === activeTab) ? (activeTab as string) : "overview";
+
+  /* Previous and next within the entry's own group, in overview order. */
+  const group = getUiKitGroup(comp.id, comp.cat);
+  const siblings = components
+    .filter((c) => getUiKitGroup(c.id, c.cat) === group && c.cat === comp.cat)
+    .sort((a, b) => (comp.cat === "Foundations" ? 0 : a.name.localeCompare(b.name)));
+  const at = siblings.findIndex((c) => c.id === comp.id);
+  const prev = at > 0 ? siblings[at - 1] : null;
+  const next = at >= 0 && at < siblings.length - 1 ? siblings[at + 1] : null;
+  const go = (id: string) => (e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    store.setSelectedComponent(id);
+    setActiveTab(tab as typeof activeTab);
+  };
+
+  const onTabKey = (e: React.KeyboardEvent) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const i = TABS.findIndex((x) => x[0] === tab);
+    const n = (i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length;
+    setActiveTab(TABS[n][0]);
+    (e.currentTarget.querySelector(`[data-tab="${TABS[n][0]}"]`) as HTMLElement | null)?.focus();
+  };
 
   return (
-    <div className="dh-detail" style={{ fontFamily: t.font, color: t.fg }}>
-      {/* Header */}
+    <div className="dh-detail kit-detail" data-testid="detail-page" data-component={componentId}>
       <header className="dh-detail-header">
         <h1 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h1>
-        <p className="dh-detail-desc" style={{ color: t.fg3 }}>{comp.desc}</p>
+        <p className="dh-detail-desc" style={{ color: t.fg2 }}>{comp.desc}</p>
       </header>
-
-      {/* 1 ── Specimen: the live demo, in a generous framed stage. ── */}
-      {specimenSection}
-
-      {/* Variants → Props → Code → Guidance → Tokens (m3.material.io order),
-          rendered from the shared section nodes computed above. */}
-      {variantsSection}
-      {propsSection}
-      {codeSection}
-      {guidanceSection}
-      {tokensSection}
+      <div ref={sentinelRef} className="kit-tabs-mark" aria-hidden="true" />
+      <div className="kit-tabs" ref={tabsRef}>
+        <div role="tablist" aria-label="Component view" className="kit-seg" onKeyDown={onTabKey}>
+          {TABS.map(([id, label]) => (
+            <button key={id} role="tab" type="button" id={`dh-tab-${id}`} data-tab={id} aria-selected={tab === id} aria-controls="dh-tabpanel"
+              tabIndex={tab === id ? 0 : -1} onClick={() => setActiveTab(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div role="tabpanel" id="dh-tabpanel" aria-labelledby={`dh-tab-${tab}`}>
+        {tab === "overview" && (
+          <>
+            {specimenSection}
+            {variants && metaId && (
+              <Playground componentId={metaId} matrix={variants} system={ds} mode={matrixMode} saltDensity={matrixDensity} />
+            )}
+          </>
+        )}
+        {tab === "specs" && (
+          (variantsSection || anatomySection || propsSection || tokensSection)
+            ? <>{variantsSection}{anatomySection}{propsSection}{tokensSection}</>
+            : <p className="dh-section-lede">A state grid, property table and token list are written for the core components (button, text input, checkbox, switch, card, chip, badge, select, avatar). {comp.name} does not have them yet; its live demo is on the Overview tab and its code on the Code tab.</p>
+        )}
+        {tab === "code" && codeSection}
+        {tab === "guidelines" && (guidanceSection ?? (
+          <p className="dh-section-lede">Written usage guidance covers the core components. There is none for {comp.name.toLowerCase()} yet.</p>
+        ))}
+        {tab === "accessibility" && accessibilitySection}
+        {tab === "compare" && <CompareView componentId={componentId} />}
+      </div>
+      {(prev || next) && (
+        <nav className="kit-pager" aria-label="More in this section">
+          {prev && <a href={`/ui-kit?ds=${activeSystem}&c=${prev.id}`} onClick={go(prev.id)}><small>Previous</small>{prev.name}</a>}
+          {next && <a className="is-next" href={`/ui-kit?ds=${activeSystem}&c=${next.id}`} onClick={go(next.id)}><small>Next</small>{next.name}</a>}
+        </nav>
+      )}
     </div>
   );
 }
@@ -647,7 +535,7 @@ export function getDetailSections(
 ): { id: string; label: string }[] {
   // Carbon (5-tab) and M3 (4-tab, Figma/M3-style) render self-contained
   // tabbed layouts full-width, so they opt out of the single-scroll TOC rail.
-  if (system === "carbon" || ["m3", "salt", "fluent", "uoaui"].includes(system)) return [];
+  if (["carbon", "m3", "salt", "fluent", "uoaui"].includes(system)) return [];
   if (componentId === "charts" || componentId === "ag-grid") return [];
 
   const metaId = META_ID[componentId];
@@ -661,82 +549,4 @@ export function getDetailSections(
   if (metaId && COMPONENT_GUIDANCE[metaId]) out.push({ id: "dh-sec-guidance", label: "Guidance" });
   if (metaId && COMPONENT_TOKENS[metaId]?.[ds]?.length) out.push({ id: "dh-sec-tokens", label: "Tokens" });
   return out;
-}
-
-/* ══════════════════════════════════════════════════════════
-   CarbonDocStub - Usage / Style / Accessibility tab content
-   ══════════════════════════════════════════════════════════
-   Carbon's authoritative source for these tabs is carbondesignsystem.com.
-   We render a brief component-specific intro + a deep link to
-   the official page. Keeps the UI Kit faithful to Carbon's docs
-   layout without duplicating IBM's content. */
-function CarbonDocStub({
-  title,
-  componentId,
-  sectionSlug,
-  body,
-  t,
-}: {
-  title: string;
-  componentId: string;
-  sectionSlug: "usage" | "style" | "accessibility";
-  body: string;
-  t: ReturnType<typeof useActiveTheme>;
-}) {
-  /* Map our internal componentId to Carbon's URL slug. Most match
-     directly (e.g. "button"); a few aliases are listed below. */
-  const urlSlug: Record<string, string> = {
-    buttons: "button",
-    "icon-button": "button",
-    inputs: "text-input",
-    alerts: "notification",
-    tags: "tag",
-    cards: "tile",
-    radios: "radio-button",
-    switches: "toggle",
-    dropdowns: "dropdown",
-    tabs: "tabs",
-    accordion: "accordion",
-    breadcrumbs: "breadcrumb",
-    "data-table": "data-table",
-    "structured-list": "structured-list",
-    pagination: "pagination",
-    dialog: "modal",
-    tooltips: "tooltip",
-    link: "link",
-    slider: "slider",
-    progress: "progress-bar",
-    loading: "loading",
-    "content-switcher": "content-switcher",
-    skeleton: "skeleton",
-    popover: "popover",
-    checkboxes: "checkbox",
-    search: "search",
-    avatars: "button", /* Carbon has no Avatar component */
-  };
-  const slug = urlSlug[componentId] ?? componentId;
-  const href = `https://carbondesignsystem.com/components/${slug}/${sectionSlug}/`;
-
-  return (
-    <div style={{ maxWidth: 720, fontFamily: t.font }}>
-      <h3 style={{ fontSize: 28, fontWeight: 400, color: t.fg, lineHeight: 1.2, marginBottom: 16, letterSpacing: "-0.16px" }}>
-        {title}
-      </h3>
-      <p style={{ fontSize: 16, color: t.fg2, lineHeight: 1.5, marginBottom: 24 }}>
-        {body}
-      </p>
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 8,
-          fontSize: 14, color: t.accent, textDecoration: "underline",
-        }}
-      >
-        Read the full {title.toLowerCase()} guide on carbondesignsystem.com
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
-      </a>
-    </div>
-  );
 }

@@ -37,6 +37,7 @@ import type { ActiveTheme } from "@/contexts/ThemeContext";
 import type { ComponentVariantMatrix, UiKitComponentId } from "@/data/ui-kit-meta";
 import { RealComponentRenderer, canRenderReal } from "@/components/ui-kit/RealComponentRenderer";
 import type { SystemId } from "@/lib/componentApiRegistry";
+import { useEdgeFade } from "@/components/ui-kit/useEdgeFade";
 
 interface VariantsMatrixProps {
   matrix: ComponentVariantMatrix;
@@ -54,13 +55,15 @@ interface VariantsMatrixProps {
 }
 
 /** The Simulated* registry block type RealComponentRenderer keys off. */
-const BLOCK_TYPE: Partial<Record<UiKitComponentId, string>> = {
+export const BLOCK_TYPE: Partial<Record<UiKitComponentId, string>> = {
   button: "SimulatedButton",
   textInput: "SimulatedTextInput",
   checkbox: "SimulatedCheckbox",
   switch: "SimulatedSwitch",
   card: "SimulatedCard",
 };
+
+const PSEUDO_STATES = new Set(["hover", "hovered", "focus", "focused", "focus-visible", "active", "pressed", "rest"]);
 
 /** Sentence-case a vocabulary token for display ("filled-darker" -> "Filled darker"). */
 function pretty(label: string): string {
@@ -80,7 +83,7 @@ function slugify(v: string): string {
  * are CSS-only and render in the default state, which is honest for a static
  * grid). Returns null when this component isn't in the real core set.
  */
-function cellProps(
+export function cellProps(
   componentId: UiKitComponentId,
   variant: string,
   state: string,
@@ -137,17 +140,24 @@ export function VariantsMatrix({
      hydration — mirrors RealComponentRenderer's caller contract. */
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
+  /* On a phone the grid is wider than the page: fade the edge it continues
+     past so a cut column reads as "more this way". */
+  const fade = useEdgeFade<HTMLDivElement>();
 
   if (!matrix) return null;
 
   const blockType = BLOCK_TYPE[componentId];
   const canReal = mounted && blockType ? canRenderReal(system, blockType) : false;
+  /* Hover, focus and pressed cannot be set as props, so a static grid can
+     only show them as copies of Default. Those columns are left out; the
+     live component on the Overview stage answers the pointer and keyboard. */
+  const states = matrix.states.filter((st) => !PSEUDO_STATES.has(st.toLowerCase()));
 
   return (
-    <div className="dh-detail-card" style={{ borderColor: t.border, background: t.bg2 }}>
+    <div className="dh-detail-card" style={{ borderColor: "transparent", background: "transparent" }}>
       {/* Axis legend — names the two vocabularies the DS exposes for this
           component, so the reader knows what "Variant × State" means here. */}
-      <div className="dh-matrix-legend" style={{ color: t.fg3, borderBottomColor: t.borderSubtle }}>
+      <div className="dh-matrix-legend" style={{ color: t.fg2, borderBottomColor: t.borderSubtle }}>
         <span>
           <strong style={{ color: t.fg2 }}>{matrix.variantAxisLabel}</strong>
           {" "}down · {matrix.variants.length} value{matrix.variants.length === 1 ? "" : "s"}
@@ -155,22 +165,22 @@ export function VariantsMatrix({
         <span aria-hidden="true" style={{ opacity: 0.4 }}>×</span>
         <span>
           <strong style={{ color: t.fg2 }}>{matrix.stateAxisLabel}</strong>
-          {" "}across · {matrix.states.length} value{matrix.states.length === 1 ? "" : "s"}
+          {" "}across · {states.length} value{states.length === 1 ? "" : "s"}
         </span>
       </div>
 
-      <div className="dh-matrix-scroll">
+      <div className="dh-matrix-scroll" ref={fade}>
         <table className="dh-matrix" style={{ fontFamily: t.font }}>
           <thead>
             <tr>
               <th
                 scope="col"
                 className="dh-matrix-corner"
-                style={{ color: t.fg3, borderColor: t.borderSubtle }}
+                style={{ color: t.fg2, borderColor: t.borderSubtle }}
               >
                 <span className="dh-matrix-axis-x">{matrix.variantAxisLabel}</span>
               </th>
-              {matrix.states.map((state) => (
+              {states.map((state) => (
                 <th
                   key={state}
                   scope="col"
@@ -192,7 +202,7 @@ export function VariantsMatrix({
                 >
                   {pretty(variant)}
                 </th>
-                {matrix.states.map((state) => {
+                {states.map((state) => {
                   const real = canReal ? cellProps(componentId, variant, state) : null;
                   return (
                     <td
@@ -207,6 +217,7 @@ export function VariantsMatrix({
                             mode={mode}
                             saltDensity={saltDensity}
                             props={real}
+                            kit={t.T}
                           />
                         ) : Demo ? (
                           <Demo />

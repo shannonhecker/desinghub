@@ -36,96 +36,45 @@ export function ContentTopBar() {
 
   if (!comp) return null;
 
+  /* Library chrome, one size in every system: the bar's height and its left
+     inset come from kit-chrome.css tokens, not from the system's density
+     scale, so the breadcrumb, the title and the tab strip stay exactly where
+     they are when the system changes (owner rule: no jumping). */
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: t.scale.gap + 4,
-      padding: `0 ${t.scale.gap + 12}px`,
-      height: t.scale.tabH, flexShrink: 0,
-      background: "transparent",
-    }}>
-      {/* Hamburger removed (owner): the panel toggle lives on the rail section
-          buttons + the panel-header close chevron, so the top bar is just the
-          breadcrumb now. */}
-      <nav style={{ display: "flex", alignItems: "center", gap: t.scale.gap, fontSize: t.scale.navF - 1, fontFamily: t.font, position: "relative" }}>
-        {/* Narrow viewports: DS name becomes a dropdown (header SystemSwitcher is hidden below 768px).
-            Wide viewports: keep plain text behaviour — SystemSwitcher covers DS nav. */}
+    <div className="kit-topbar">
+      <nav className="kit-crumbs" aria-label="Breadcrumb">
+        {/* Narrow viewports: the system name opens a picker (the rail's
+            system row scrolls on a phone). Wide: a link back to the overview. */}
         {isNarrow ? (
           <>
-            {dsOpen && (
-              <div style={{ position: "fixed", inset: 0, zIndex: 98 }} onClick={() => setDsOpen(false)} />
-            )}
-            <button
-              onClick={() => setDsOpen(v => !v)}
-              aria-haspopup="listbox"
-              aria-expanded={dsOpen}
-              style={{
-                background: "none", border: `1px solid ${dsOpen ? t.accent : t.border}`,
-                borderRadius: 4, padding: `${t.scale.gap - 2}px ${t.scale.gap}px`,
-                fontSize: t.scale.navF - 1, color: t.fg, cursor: "pointer", fontFamily: t.font,
-                display: "inline-flex", alignItems: "center", gap: 6,
-                transition: "border-color 150ms",
-              }}
-            >
-              <span style={{ fontWeight: 500 }}>{sysInfo.name}</span>
-              <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, color: t.fg3 }}>
-                {dsOpen ? "expand_less" : "expand_more"}
-              </span>
+            {dsOpen && <div className="kit-crumb-scrim" onClick={() => setDsOpen(false)} />}
+            <button type="button" className="kit-crumb-pick" onClick={() => setDsOpen((v) => !v)} aria-haspopup="listbox" aria-expanded={dsOpen}>
+              <span>{sysInfo.name}</span>
+              <span className="material-symbols-outlined" aria-hidden="true">{dsOpen ? "expand_less" : "expand_more"}</span>
             </button>
             {dsOpen && (
-              <div role="listbox" aria-label="Design system" style={{
-                position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 99,
-                minWidth: 180,
-                /* uoaui' t.bg2 is a glass layer — can read thin over its
-                   gradient/beam bg. Prefer its cardBg (opaque glass fill)
-                   when present so the dropdown stays legible. */
-                background: t.T.cardBg || t.bg2 || t.bg,
-                border: `1px solid ${t.border}`,
-                borderRadius: 4, boxShadow: "0 4px 16px rgba(0,0,0,0.2)", overflow: "hidden",
-                fontFamily: t.font,
+              <div role="listbox" aria-label="Design system" className="kit-crumb-menu" style={{
+                /* uoaui's raised surface is glass: keep the menu legible. */
                 backdropFilter: t.T.glass as string | undefined,
                 WebkitBackdropFilter: t.T.glass as string | undefined,
               }}>
-                {DS_OPTIONS.map(opt => {
+                {DS_OPTIONS.map((opt) => {
                   const isSelected = activeSystem === opt.id;
                   return (
-                    <button
-                      key={opt.id}
-                      role="option"
-                      aria-selected={isSelected}
-                      onClick={() => { setActiveSystem(opt.id); setDsOpen(false); }}
-                      style={{
-                        display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between",
-                        padding: "10px 12px", border: "none", cursor: "pointer",
-                        fontFamily: t.font, fontSize: 13, textAlign: "left",
-                        background: isSelected ? t.accentWeak : "transparent",
-                        color: isSelected ? t.accentText : t.fg,
-                        transition: "background 100ms",
-                      }}
-                    >
+                    <button key={opt.id} type="button" role="option" aria-selected={isSelected} onClick={() => { setActiveSystem(opt.id); setDsOpen(false); }}>
                       <span>{opt.label}</span>
-                      {isSelected && <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, color: t.accentText }}>check</span>}
+                      {isSelected && <span className="material-symbols-outlined" aria-hidden="true">check</span>}
                     </button>
                   );
                 })}
               </div>
             )}
-            {comp && (
-              <>
-                <span style={{ color: t.fg3, fontSize: t.scale.labF }}>/</span>
-                <span style={{ color: t.fg, fontWeight: 500, padding: `${t.scale.gap - 2}px 0` }}>{comp.name}</span>
-              </>
-            )}
           </>
-        ) : comp ? (
-          <>
-            <button onClick={() => setSelectedComponent(null)}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: `${t.scale.gap - 2}px 0`, fontSize: t.scale.navF - 1, color: t.accent, fontFamily: t.font }}>
-              {sysInfo.name}
-            </button>
-            <span style={{ color: t.fg3, fontSize: t.scale.labF }}>/</span>
-            <span style={{ color: t.fg, fontWeight: 500, padding: `${t.scale.gap - 2}px 0` }}>{comp.name}</span>
-          </>
-        ) : null}
+        ) : (
+          <button type="button" className="kit-crumb-link" onClick={() => setSelectedComponent(null)}>{sysInfo.name}</button>
+        )}
+        <span className="kit-crumb-sep" aria-hidden="true">/</span>
+        <span className="kit-crumb-here" aria-current="page">{comp.name}</span>
       </nav>
     </div>
   );

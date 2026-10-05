@@ -2972,11 +2972,15 @@ export function getCarbonPreviews() {
    matches S/M/L input+button heights. Override
    only the .cb-btn and .cb-input defaults - other
    components keep their own size variants. */
+/* The density rule sets the DEFAULT button height. It must skip buttons that
+   carry an explicit size class, or it flattens the Sizes specimen (XL and
+   2XL rendered at the default height). :where() keeps the specificity
+   unchanged. */
 export function getCarbonDensityCSS(density) {
   const map = {
-    compact:  ".cb-btn{height:24px;font-size:12px;padding:0 16px 0 12px;gap:16px;} .cb-input{height:32px;font-size:12px;}",
-    normal:   ".cb-btn{height:40px;padding:0 48px 0 16px;} .cb-input{height:40px;}",
-    spacious: ".cb-btn{height:48px;} .cb-input{height:48px;}",
+    compact:  ".cb-btn:where(:not(.cb-btn-xs,.cb-btn-sm,.cb-btn-md,.cb-btn-lg,.cb-btn-xl,.cb-btn-2xl)){height:24px;font-size:12px;padding:0 16px 0 12px;gap:16px;} .cb-input{height:32px;font-size:12px;}",
+    normal:   ".cb-btn:where(:not(.cb-btn-xs,.cb-btn-sm,.cb-btn-md,.cb-btn-lg,.cb-btn-xl,.cb-btn-2xl)){height:40px;padding:0 48px 0 16px;} .cb-input{height:40px;}",
+    spacious: ".cb-btn:where(:not(.cb-btn-xs,.cb-btn-sm,.cb-btn-md,.cb-btn-lg,.cb-btn-xl,.cb-btn-2xl)){height:48px;} .cb-input{height:48px;}",
   };
   return map[density] || map.normal;
 }

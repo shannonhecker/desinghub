@@ -12,6 +12,7 @@ import { InPageTOC } from "./InPageTOC";
 import { LandingGrid } from "./LandingGrid";
 import { FoundationPage } from "./FoundationPage";
 import { COMPONENT_ROUTES, getUiKitGroup } from "./uiKitGroups";
+import { NotInSystem } from "./NotInSystem";
 
 /* Lazy-load the builder-vocabulary gallery: it pulls in the builder's
    ComponentRenderer (SimulatedUI + Highcharts), so deferring it keeps the
@@ -57,6 +58,10 @@ export function MainContent() {
   const selectedComponent = useDesignHub((s) => s.selectedComponent);
   const activeSystem = useDesignHub((s) => s.activeSystem);
 
+  const missing = useDesignHub((s) => s.missing);
+
+  /* The visitor switched to a system without this entry: say so in place. */
+  if (missing) return <NotInSystem />;
   if (!selectedComponent) return <LandingGrid />;
 
   /* Special ids route via the single COMPONENT_ROUTES table (shared with
