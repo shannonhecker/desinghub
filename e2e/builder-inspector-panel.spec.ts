@@ -667,7 +667,10 @@ test("block actions: Duplicate selects the copy; Delete returns to the library w
   await expect(panel.locator(".lib-header-title")).toHaveText("Components");
   expect(await zoom()).toBe(z);
 
-  await page.getByRole("button", { name: /^Undo \(/ }).click();
+  /* The same toast as a canvas delete, with its Undo. */
+  const toast = page.locator(".dh-toast", { hasText: "Block deleted" });
+  await expect(toast).toBeVisible();
+  await toast.getByRole("button", { name: "Undo" }).click();
   await expect.poll(count).toBe(before + 1);
 });
 
@@ -698,3 +701,33 @@ test("the pill sits outside a stat card, not over its content", async ({ page })
   expect(m.inside, `pill outside the block (${m.placement})`).toBe(false);
   await page.screenshot({ path: "test-results/pill-outside-statcard.png" });
 });
+
+/* The panel body scrolls (its absence shipped once): in browse mode and with
+   a block selected, at desktop, tablet and phone sizes. */
+for (const [w, h] of [[1440, 900], [900, 800], [390, 844]] as const) {
+  test(`the panel body scrolls at ${w}x${h}, in browse and with a block selected`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await openAnalyticsEditNoPanel(page);
+    const body = page.locator(".component-sidebar .lib-body");
+    const scrolls = async (label: string) => {
+      await expect(body).toBeVisible();
+      const m = await body.evaluate((el) => ({ sh: el.scrollHeight, ch: el.clientHeight, oy: getComputedStyle(el).overflowY }));
+      expect(m.oy, `${label}: overflow-y`).toBe("auto");
+      expect(m.sh, `${label}: content taller than the body`).toBeGreaterThan(m.ch);
+      await body.evaluate((el) => { el.scrollTop = 0; });
+      const box = (await body.boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + Math.min(box.height / 2, 120));
+      await page.mouse.wheel(0, 400);
+      await expect.poll(() => body.evaluate((el) => el.scrollTop), { message: `${label}: wheel scrolls` }).toBeGreaterThan(0);
+    };
+    /* Selected: every section open, so the inspector is taller than the panel. */
+    /* A stat card: selecting it opens the panel at every size (sheet, drawer, dock). */
+    await select(page, "tpl-ad-kpi-1-");
+    await expandAll(page);
+    await scrolls("selected");
+    /* Browse: back to the library. */
+    await page.locator(".component-sidebar").getByRole("button", { name: "Components and templates", exact: true }).click();
+    await expect(page.locator(".inspector-stack")).toHaveCount(0);
+    await scrolls("browse");
+  });
+}

@@ -62,6 +62,10 @@ describe("inspector progressive disclosure", () => {
     expect(cl).toMatch(/<ZoneLayoutSection\b/);
   });
 
+  it("the panel body scrolls (CSS guard)", () => {
+    expect(css).toMatch(/\.component-library > \.lib-body\s*\{[^}]*overflow-y:\s*auto/);
+  });
+
   it("has inspector-subgroup styling", () => {
     expect(css).toMatch(/\.inspector-subgroup\b/);
   });
