@@ -400,7 +400,7 @@ async function editCanvas(page: Page) {
 }
 const canvasSwitch = (page: Page) => page.locator(".bp-device-frame .bp-main .MuiSwitch-root");
 
-interface SwitchLook { root: [number, number]; track: [number, number]; trackRadius: number; trackBorder: number; thumb: number; trackBg: string; checked: boolean }
+interface SwitchLook { root: [number, number]; track: [number, number]; trackRadius: number; outlined: boolean; thumb: number; trackBg: string; checked: boolean }
 async function switchLook(sw: Locator): Promise<SwitchLook> {
   return sw.evaluate((el) => {
     /* Layout sizes (offset and client boxes), which the Edit canvas's scale
@@ -410,7 +410,10 @@ async function switchLook(sw: Locator): Promise<SwitchLook> {
     const cs = getComputedStyle(track);
     return {
       root: size(el), track: size(track),
-      trackRadius: parseFloat(cs.borderTopLeftRadius), trackBorder: (track.offsetWidth - track.clientWidth) / 2,
+      trackRadius: parseFloat(cs.borderTopLeftRadius),
+      /* The outline's exact 2px is measured in Present, at full scale; a
+         scaled canvas snaps a border to the device grid. */
+      outlined: cs.borderTopStyle === "solid" && parseFloat(cs.borderTopWidth) > 0,
       thumb: size(el.querySelector(".MuiSwitch-thumb")!)[0], trackBg: cs.backgroundColor,
       checked: Boolean(el.querySelector(".Mui-checked")),
     };
@@ -429,11 +432,13 @@ test.describe("Builder - Material 3 switch sizes", () => {
     await expect(on).toHaveClass(/MuiSwitch-sizeSmall/);
     for (const mode of MODES) {
       await setMode(page, mode);
+      /* The track's colour follows the mode a frame after the canvas does. */
+      await settled(async () => expect((await switchLook(on)).trackBg, "on is the primary role").toBe(ROLES[mode].primary));
       const a = await switchLook(on);
       expect(a.root, "MUI's small box").toEqual([40, 24]);
       expect(a.track, "the track fills it").toEqual([40, 24]);
       expect(a.trackRadius).toBeGreaterThanOrEqual(12);
-      expect(a.trackBorder).toBe(2);
+      expect(a.outlined, "the track is outlined").toBe(true);
       expect(a.thumb, "the on handle").toBe(18);
       expect(a.trackBg, "on is the primary role").toBe(ROLES[mode].primary);
       const b = await switchLook(off);
@@ -445,7 +450,9 @@ test.describe("Builder - Material 3 switch sizes", () => {
   test("a switch added to a finance template (ESG Analytics) is Material's, and the panels do not move", async ({ page }) => {
     await applyTemplate(page, "ESG Analytics");
     await editCanvas(page);
-    const boxes = () => page.locator(".bp-device-frame .bp-main [data-block-id]").evaluateAll((els) => els.slice(0, 6).map((el) => { const r = el.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.width), Math.round(r.height)]; }));
+    /* Each panel's layout size (the Edit canvas rescales when the inspector
+       opens, so rendered rectangles are not comparable; layout sizes are). */
+    const boxes = () => page.locator(".bp-device-frame .bp-main [data-block-id]").evaluateAll((els) => Object.fromEntries(els.map((el) => { const cell = (el.parentElement ?? el) as HTMLElement; return [el.getAttribute("data-block-id")!, [cell.offsetLeft, cell.offsetWidth, cell.offsetHeight]]; })));
     const before = await boxes();
     const show = page.getByRole("button", { name: "Show component library", exact: true });
     if (await show.isVisible()) await show.click();
@@ -459,10 +466,15 @@ test.describe("Builder - Material 3 switch sizes", () => {
       expect(s.root, "MUI's medium box").toEqual([58, 38]);
       expect(s.track, "Material's track").toEqual([52, 32]);
       expect(s.trackRadius).toBeGreaterThanOrEqual(16);
-      expect(s.trackBorder).toBe(2);
+      expect(s.outlined, "the track is outlined").toBe(true);
       expect(s.thumb).toBe(s.checked ? 24 : 16);
     }
     /* The report's panels keep their columns and heights. */
-    expect((await boxes()).slice(0, before.length)).toEqual(before);
+    const after = await boxes();
+    expect(Object.keys(before).length, "the report's panels").toBeGreaterThanOrEqual(6);
+    /* Within the builder's 1px: a width is a whole number of a fractional column. */
+    for (const [id, box] of Object.entries(before)) {
+      box.forEach((v, i) => expect(Math.abs(after[id][i] - v), `panel ${id}, ${["left", "width", "height"][i]}`).toBeLessThanOrEqual(1));
+    }
   });
 });
