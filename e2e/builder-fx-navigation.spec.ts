@@ -3,8 +3,10 @@ import { test, expect, type Page } from "@playwright/test";
 /**
  * FX Execution, PR B: chart navigation (Present only).
  *
- *   - Wheel zooms time on the plot, centred on the pointer, and price on the
- *     price axis; the page scrolls as usual off the chart.
+ *   - The page is never trapped: at the full view a plain wheel, up or down,
+ *     scrolls the page (a note says "hold Ctrl and scroll"); Ctrl or Cmd
+ *     wheel zooms; once zoomed the wheel zooms time on the plot, centred on
+ *     the pointer, and price on the price axis.
  *   - Drag pans; panned back, new feed bars do not move the view; "Back to
  *     live" returns; Reset returns to the full view and to following.
  *   - Box zoom from the rail zooms both axes and switches itself off.
@@ -58,6 +60,12 @@ async function pause(page: Page) {
   await stage(page).getByRole("button", { name: "Pause the sample feed" }).click();
   await expect(stage(page).locator(".dh-feed-status")).toHaveClass(/is-paused/);
 }
+/** A wheel with Ctrl held: how zooming starts from the full view (a trackpad pinch arrives the same way). */
+async function ctrlWheel(page: Page, dy: number) {
+  await page.keyboard.down("Control");
+  await page.mouse.wheel(0, dy);
+  await page.keyboard.up("Control");
+}
 const rail = (page: Page, name: string) => stage(page).getByRole("button", { name, exact: true });
 
 async function switchSystem(page: Page, label: (typeof SYSTEMS)[number]) {
@@ -84,12 +92,16 @@ test.describe("Builder - FX Execution chart navigation", () => {
     await expect.poll(taken).toBe(false);
     expect(await viewX(page)).toBeNull();
     await page.mouse.move(px, area.y + area.height * 0.5);
-    /* On the plot at the full view, a wheel down has nothing to zoom out of: the page's too. */
+    /* On the plot at the full view a plain wheel is the page's, down and up, and a note says how to zoom. */
     await page.mouse.wheel(0, 120);
     await expect.poll(taken).toBe(false);
+    await page.mouse.wheel(0, -120);
+    await expect.poll(taken).toBe(false);
     expect(await viewX(page)).toBeNull();
-    /* The bar under the pointer, before: the full view runs from -0.5 to the axis end. */
-    await page.mouse.wheel(0, -200);
+    await expect(plot(page).locator(".dh-exec-wheel-note")).toHaveText(/^Hold (Ctrl|\u2318) and scroll to zoom$/);
+    await expect(plot(page).locator(".dh-exec-wheel-note")).toHaveCount(0, { timeout: 5_000 });
+    /* With Ctrl held, the chart's. */
+    await ctrlWheel(page, -200);
     await expect.poll(() => viewX(page)).not.toBeNull();
     expect(await taken()).toBe(true);
     const [a, b] = (await viewX(page))!;
@@ -105,14 +117,18 @@ test.describe("Builder - FX Execution chart navigation", () => {
     await rail(page, "Reset view").click();
     await expect.poll(() => viewX(page)).toBeNull();
     await page.mouse.move(px, area.y + area.height * 0.5);
-    await page.mouse.wheel(0, -300);
+    await ctrlWheel(page, -300);
     await expect.poll(() => viewX(page)).not.toBeNull();
     await page.mouse.dblclick(px, area.y + area.height * 0.5);
     await expect.poll(() => viewX(page)).toBeNull();
 
-    /* Over the price axis: price zooms, time does not. */
+    /* Over the price axis: the page's at the full view; with Ctrl price zooms, time does not. */
     await page.mouse.move(area.x + area.width + 30, area.y + area.height * 0.3);
+    await page.waitForTimeout(500);
     await page.mouse.wheel(0, -200);
+    await expect.poll(taken).toBe(false);
+    expect(await viewY(page)).toBeNull();
+    await ctrlWheel(page, -200);
     await expect.poll(() => viewY(page)).not.toBeNull();
     expect(await viewX(page)).toBeNull();
     await rail(page, "Reset view").click();
@@ -125,7 +141,8 @@ test.describe("Builder - FX Execution chart navigation", () => {
     const area = await plotArea(page);
     const y = area.y + area.height * 0.5;
     await page.mouse.move(area.x + area.width * 0.5, y);
-    for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -200);
+    await ctrlWheel(page, -200);
+    for (let i = 0; i < 3; i++) await page.mouse.wheel(0, -200);
     await expect.poll(() => viewX(page)).not.toBeNull();
     /* Drag right: earlier bars come in from the left. */
     await page.mouse.move(area.x + area.width * 0.3, y);
@@ -188,7 +205,23 @@ test.describe("Builder - FX Execution chart navigation", () => {
     await page.mouse.move(area.x + area.width * 0.5, area.y + area.height * 0.4);
     await page.mouse.down();
     await expect(plot(page)).toHaveAttribute("data-pinned", "true", { timeout: 2_000 });
-    await expect(plot(page).locator(".highcharts-tooltip")).toBeVisible();
+    const tip = plot(page).locator(".highcharts-tooltip");
+    await expect(tip).toBeVisible();
+    /* Pinned means pinned: fully opaque, on its own solid panel, for as long as it is held (it used to fade out after half a second). */
+    const solid = () => tip.evaluate((el) => {
+      const box = el.querySelector(".highcharts-tooltip-box") as SVGElement | null;
+      const fill = box ? getComputedStyle(box).fill : "none";
+      const alpha = /rgba\(.*,\s*([\d.]+)\)/.exec(fill)?.[1];
+      return { opacity: getComputedStyle(el).opacity, visibility: el.getAttribute("visibility"), filled: fill !== "none" && fill !== "transparent" && (alpha === undefined || Number(alpha) === 1), boxOpacity: box ? getComputedStyle(box).opacity + getComputedStyle(box).fillOpacity : "" };
+    });
+    for (const wait of [300, 900, 1500]) {
+      await page.waitForTimeout(wait);
+      expect(await solid()).toEqual({ opacity: "1", visibility: null, filled: true, boxOpacity: "11" });
+    }
+    /* It follows the pointer while held. */
+    await page.mouse.move(area.x + area.width * 0.6, area.y + area.height * 0.45, { steps: 4 });
+    await page.waitForTimeout(700);
+    expect((await solid()).opacity).toBe("1");
     await page.mouse.up();
     await expect(plot(page)).not.toHaveAttribute("data-pinned", "true");
   });
@@ -331,6 +364,59 @@ test.describe("Builder - FX Execution chart navigation", () => {
     expect(await viewX(page)).not.toBeNull();
   });
 
+  test("a custom range that starts before the range on screen is shown whole, not cut to the bars already there", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    await expect(stage(page).locator(".dh-exec-ranges")).toHaveAttribute("data-range", "1D");
+    const barsBefore = Number(await stage(page).locator(".dh-exec").getAttribute("data-chart-bars"));
+    await stage(page).getByRole("button", { name: "Go to a date or range" }).click();
+    const dialog = page.getByRole("dialog", { name: "Go to" });
+    await dialog.getByText("Custom range", { exact: true }).first().click();
+    await dialog.getByLabel("From", { exact: true }).fill("2026-01-02");
+    await dialog.getByLabel(/^Time/).first().fill("10:00");
+    await dialog.getByLabel("To", { exact: true }).fill("2026-01-05");
+    await dialog.getByLabel(/^Time/).nth(1).fill("11:00");
+    await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(stage(page).getByRole("button", { name: /^Go to: showing 2 Jan 10:00 to 5 Jan 11:00/ })).toHaveAttribute("aria-pressed", "true");
+    /* The window starts on 2 January: the range reaches back for it (3D starts on the 2nd). */
+    await expect(stage(page).locator(".dh-exec-ranges")).toHaveAttribute("data-range", "3D");
+    await expect.poll(async () => Number(await stage(page).locator(".dh-exec").getAttribute("data-chart-bars"))).toBeGreaterThan(barsBefore);
+    /* The view holds more than the session's part of the window (bars 0 to 61 of the 1D view), and its first time label is a January 2 one. */
+    const x = (await viewX(page))!;
+    expect(x[1] - x[0]).toBeGreaterThan(63);
+    await expect(plot(page).locator(".highcharts-xaxis-labels text").first()).toHaveText(/^02 Jan$/);
+  });
+
+  test("on a zoomed price scale, tags whose price is off the scale are not drawn; the hint stays clear of the tags", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    const pills = plot(page).locator(".dh-exec-pill");
+    const all = await pills.count();
+    expect(all).toBeGreaterThanOrEqual(4);
+    await plot(page).focus();
+    for (let i = 0; i < 8; i++) await page.keyboard.press("PageUp");
+    const y = (await viewY(page))!;
+    await expect.poll(() => pills.count()).toBeLessThan(all);
+    for (const text of await pills.allTextContents()) {
+      const price = Number(text.trim().split(/\s+/).pop());
+      expect(price, text).toBeGreaterThanOrEqual(y[0] - 0.00002);
+      expect(price, text).toBeLessThanOrEqual(y[1] + 0.00002);
+    }
+    /* The one-time hint: inside the plot, low, over no tag. */
+    const hint = stage(page).locator(".dh-exec-hint");
+    await expect(hint).toBeVisible();
+    const h = (await hint.boundingBox())!;
+    const area = await plotArea(page);
+    expect(h.y).toBeGreaterThan(area.y + area.height / 2);
+    expect(h.x + h.width).toBeLessThanOrEqual(area.x + area.width + 1);
+    await page.keyboard.press("0");
+    await expect.poll(() => pills.count()).toBe(all);
+    for (const b of await pills.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON() as DOMRect))) {
+      expect(b.x >= h.x + h.width || b.x + b.width <= h.x || b.y >= h.y + h.height || b.y + b.height <= h.y).toBe(true);
+    }
+  });
+
   test("Go to: every calendar interaction of the original, by pointer and by keyboard", async ({ page }) => {
     await applyFx(page);
     await pause(page);
@@ -377,7 +463,19 @@ test.describe("Builder - FX Execution chart navigation", () => {
     await dialog.getByLabel("Date", { exact: true }).fill("2026-01-03");
     await dialog.getByLabel(/^Time/).first().fill("12:00");
     await dialog.getByRole("button", { name: "Go to", exact: true }).click();
-    await expect(dialog.getByText("No bars in that window: the market was closed. Pick a weekday time.")).toBeVisible();
+    await expect(dialog.getByText("No bars in that window. Try a wider one.")).toBeVisible();
+    /* A half-typed time is not midnight. */
+    await dialog.getByLabel("Date", { exact: true }).fill("2026-01-05");
+    const time = dialog.getByLabel(/^Time/).first();
+    await time.focus();
+    await page.keyboard.press("Backspace");
+    await page.keyboard.type("10");
+    if (await time.evaluate((el: HTMLInputElement) => el.validity.badInput)) {
+      await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+      await expect(dialog.getByText("Enter the whole time as HH:MM, for example 10:30.")).toBeVisible();
+      await expect(time).toBeFocused();
+    }
+    await time.fill("10:30");
     await expect(dialog).toBeVisible();
 
     /* Custom range: the calendar fills From, then To, and the field in hand is the one it fills. */
@@ -507,6 +605,10 @@ test.describe("Builder - FX Execution chart navigation", () => {
       await expect(dialog).toBeVisible();
       const d = (await dialog.boundingBox())!;
       const view = page.viewportSize()!;
+      /* No wider than the device frame it was opened from. */
+      const device = (await page.locator(".bp-device-frame").boundingBox())!;
+      expect(d.x).toBeGreaterThanOrEqual(device.x - 1);
+      expect(d.x + d.width).toBeLessThanOrEqual(device.x + device.width + 1);
       expect(d.x).toBeGreaterThanOrEqual(0);
       expect(d.x + d.width).toBeLessThanOrEqual(view.width);
       expect(d.y).toBeGreaterThanOrEqual(0);
@@ -518,4 +620,45 @@ test.describe("Builder - FX Execution chart navigation", () => {
       await expect(chip).toBeFocused();
     });
   }
+});
+
+test.describe("Builder - FX Execution chart navigation, touch", () => {
+  test.use({ hasTouch: true });
+
+  /** One finger from a to b, through the browser's own touch pipeline (touch-action applies). */
+  async function swipe(page: Page, a: { x: number; y: number }, b: { x: number; y: number }, steps = 8) {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: a.x, y: a.y }] });
+    for (let i = 1; i <= steps; i++) {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: a.x + ((b.x - a.x) * i) / steps, y: a.y + ((b.y - a.y) * i) / steps }] });
+      await page.waitForTimeout(16);
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await cdp.detach();
+  }
+
+  test("a finger scales the price axis and draws a box zoom (neither is cancelled by a vertical move); a vertical swipe on the plot stays the page's", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    await expect(plot(page)).toHaveCSS("touch-action", "pan-y");
+    await expect(plot(page).locator(".dh-exec-gutter")).toHaveCSS("touch-action", "none");
+    const area = await plotArea(page);
+    /* A vertical swipe on the plot: the browser takes it for the page; the view does not move. */
+    await swipe(page, { x: area.x + area.width * 0.5, y: area.y + area.height * 0.6 }, { x: area.x + area.width * 0.5, y: area.y + area.height * 0.3 });
+    expect(await viewX(page)).toBeNull();
+    expect(await viewY(page)).toBeNull();
+    /* A vertical drag on the price gutter scales the price axis. */
+    await swipe(page, { x: area.x + area.width + 40, y: area.y + area.height * 0.3 }, { x: area.x + area.width + 40, y: area.y + area.height * 0.6 });
+    await expect.poll(() => viewY(page)).not.toBeNull();
+    await rail(page, "Reset view").click();
+    await expect.poll(() => viewY(page)).toBeNull();
+    /* Box zoom: a diagonal drag, mostly vertical, zooms both axes and the tool switches off. */
+    await rail(page, "Box zoom").click();
+    await expect(plot(page)).toHaveCSS("touch-action", "none");
+    await swipe(page, { x: area.x + area.width * 0.4, y: area.y + area.height * 0.15 }, { x: area.x + area.width * 0.55, y: area.y + area.height * 0.6 }, 10);
+    await expect.poll(() => viewX(page)).not.toBeNull();
+    expect(await viewY(page)).not.toBeNull();
+    await expect(rail(page, "Box zoom")).toHaveAttribute("aria-pressed", "false");
+    await expect(plot(page)).toHaveCSS("touch-action", "pan-y");
+  });
 });
