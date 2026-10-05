@@ -4,6 +4,7 @@ import { EXECUTION_INTERVALS, EXECUTION_KEYS, resolveExecution } from "../execut
 import { createTicker, feedBaseView, FEED_SEED, withFeed } from "../executionFeed";
 import {
   amendLimit, canAmend, compareOrders, COMPARE_MEASURES, defaultOrderType, draftTicket, formatAmount, parseAmount, parsePrice, tidyAmount,
+  groupSampleOrders, sampleOrderLabel,
   percentDoneSeries, PRICE_BAND, priceBand, PRICE_STEP, SAMPLE_CONFIRMATION, snapPrice, stagedTicket, stepPrice, validateAmendment, validateTicket,
   type Amendment, type TicketDraft,
 } from "../executionOrders";
@@ -279,5 +280,41 @@ describe("percentDoneSeries", () => {
       ys.forEach((y, i) => { if (i) expect(y).toBeGreaterThanOrEqual(ys[i - 1]); });
     }
     expect(series[1].points.at(-1)?.[1]).toBe(100);
+  });
+});
+
+describe("sample orders on the plot: one label per side and price", () => {
+  it("an order on its own keeps its plain label", () => {
+    const groups = groupSampleOrders([{ side: "BUY", price: 1.3765 }]);
+    expect(groups).toEqual([{ side: "BUY", price: 1.3765, count: 1 }]);
+    expect(sampleOrderLabel(groups[0])).toBe("SAMPLE BUY 1.37650");
+  });
+
+  it("the same side at the same price is one group, counted", () => {
+    const groups = groupSampleOrders([
+      { side: "BUY", price: 1.37635 }, { side: "BUY", price: 1.37635 }, { side: "BUY", price: 1.37635 }, { side: "BUY", price: 1.37635 },
+    ]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].count).toBe(4);
+    expect(sampleOrderLabel(groups[0])).toBe("SAMPLE BUY 1.37635 \u00d74");
+  });
+
+  it("the other side at that price, and another price, are groups of their own, in the order first placed", () => {
+    const groups = groupSampleOrders([
+      { side: "BUY", price: 1.37635 }, { side: "SELL", price: 1.37635 }, { side: "BUY", price: 1.3764 }, { side: "BUY", price: 1.37635 }, { side: "SELL", price: 1.37635 },
+    ]);
+    expect(groups.map(sampleOrderLabel)).toEqual(["SAMPLE BUY 1.37635 \u00d72", "SAMPLE SELL 1.37635 \u00d72", "SAMPLE BUY 1.37640"]);
+  });
+
+  it("prices that print the same are the same price (a float's last digits do not split a group)", () => {
+    const groups = groupSampleOrders([{ side: "SELL", price: 1.37635 }, { side: "SELL", price: 1.3763500000001 }, { side: "SELL", price: 0.1 + 0.2 }, { side: "SELL", price: 0.3 }]);
+    expect(groups.map((g) => g.count)).toEqual([2, 2]);
+  });
+
+  it("nothing placed is nothing drawn, and the input is not changed", () => {
+    expect(groupSampleOrders([])).toEqual([]);
+    const placed = [{ side: "BUY" as const, price: 1.2 }, { side: "BUY" as const, price: 1.2 }];
+    groupSampleOrders(placed);
+    expect(placed).toHaveLength(2);
   });
 });

@@ -267,6 +267,34 @@ test.describe("Builder - FX Execution sample orders", () => {
     await expect(stage(page).locator(".dh-order-placed")).toHaveCount(2);
   });
 
+  test("the same sample order twice is one line and one label, with a count; another price is a label of its own", async ({ page }) => {
+    await applyFx(page);
+    const labels = stage(page).locator(".dh-order-placed-label");
+    const place = async (price: string) => {
+      await expect(toast(page)).toHaveText("", { timeout: 6_000 });
+      await fillNow(page).click();
+      await expectTicket(page, "BUY", "Limit");
+      await page.locator("#dh-ticket-price").fill(price);
+      await submit(page).click();
+      await expect(dialog(page)).toHaveCount(0);
+      await expect(toast(page)).toHaveText(CONFIRMATION);
+    };
+    await place("1.37650");
+    await expect(labels).toHaveCount(1);
+    await expect(labels).toHaveText("SAMPLE BUY 1.37650");
+    await place("1.37650");
+    /* Still one label and one line: it says how many. */
+    await expect(labels).toHaveCount(1);
+    await expect(labels).toHaveText("SAMPLE BUY 1.37650 \u00d72");
+    await expect(stage(page).locator(".dh-order-placed")).toHaveCount(1);
+    await place("1.37650");
+    await expect(labels).toHaveText("SAMPLE BUY 1.37650 \u00d73");
+    await place("1.37640");
+    await expect(labels).toHaveCount(2);
+    await expect(labels.filter({ hasText: "1.37640" })).toHaveText("SAMPLE BUY 1.37640");
+    await expect(stage(page).locator(".dh-order-placed")).toHaveCount(2);
+  });
+
   test("dragging the LMT tag amends the limit: a read-out follows, snapped; release steps the limit; Escape cancels", async ({ page }) => {
     await applyFx(page);
     const before = (await priceOf(limitTag(page)))!;

@@ -14,7 +14,7 @@
  * Design note: docs/superpowers/specs/2026-10-06-fx-execution-trading-design.md (PR D)
  */
 
-import { EXECUTION_INTERVALS, type ExecutionView } from "./executionModel";
+import { EXECUTION_INTERVALS, formatPrice, type ExecutionView } from "./executionModel";
 import { parseExecutionTime } from "./reportData/executionDataset";
 import { tableOf, type DataRow, type ReportDataset } from "./reportData/types";
 
@@ -272,4 +272,28 @@ export function percentDoneSeries(dataset: ReportDataset): { id: string; side: s
       .sort((a, b) => parseExecutionTime(a.time) - parseExecutionTime(b.time));
     return { id: String(o.order), side: String(o.side), points: mine.map((b, i): [number, number] => [i, num(b.pctDone)]) };
   });
+}
+
+/* ── Sample orders on the plot ──
+   Every confirmed sample order is drawn at its price. Several at one price
+   on one side are one line and one label with a count ("SAMPLE BUY 1.37635
+   ×4"): the same words four times over said nothing more and covered the
+   chart. */
+export interface SampleOrderGroup { side: Side; price: number; count: number }
+
+/** One group per side and price as it prints, in the order first placed. */
+export function groupSampleOrders(placed: readonly Pick<SampleOrder, "side" | "price">[]): SampleOrderGroup[] {
+  const groups = new Map<string, SampleOrderGroup>();
+  for (const o of placed) {
+    const key = `${o.side} ${formatPrice(o.price)}`;
+    const group = groups.get(key);
+    if (group) group.count += 1;
+    else groups.set(key, { side: o.side, price: o.price, count: 1 });
+  }
+  return [...groups.values()];
+}
+
+/** "SAMPLE BUY 1.37650", with "×n" after it when the group holds more than one. */
+export function sampleOrderLabel(group: SampleOrderGroup): string {
+  return `SAMPLE ${group.side} ${formatPrice(group.price)}${group.count > 1 ? ` \u00d7${group.count}` : ""}`;
 }
