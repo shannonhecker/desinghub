@@ -55,6 +55,26 @@ async function setMode(page: Page, mode: Mode) {
   const toggle = page.getByRole("button", { name: `Switch to ${mode} mode` });
   if (await toggle.count()) await toggle.first().click();
   await expect(page.getByRole("button", { name: `Switch to ${mode === "dark" ? "light" : "dark"} mode` }).first()).toBeVisible();
+  /* The canvas repaints in the new mode a frame or two after the toggle
+     says so (the token sheet and each MUI theme follow the store): wait
+     until the canvas's own primary is that mode's before reading anything. */
+  await expect(async () => {
+    const primary = await stage(page).locator(".bp-dashboard").evaluate((el) => {
+      const probe = document.createElement("span");
+      probe.style.color = "var(--ds-primary)";
+      el.appendChild(probe);
+      const c = getComputedStyle(probe).color;
+      probe.remove();
+      return c;
+    });
+    expect(primary).toBe(ROLES[mode].primary);
+  }).toPass({ timeout: 10_000 });
+}
+
+/** Read and check once the look has settled: a colour transition or a
+ *  re-themed component may still be a frame behind a mode change. */
+async function settled(check: () => Promise<void>) {
+  await expect(check).toPass({ timeout: 10_000 });
 }
 
 interface Look {
@@ -142,6 +162,7 @@ test.describe("Builder - Material 3 is Material 3", () => {
       await nav("Profile").click();
       const upload = stage(page).getByRole("button", { name: "Upload photo" });
       await expect(upload).toBeVisible();
+      await settled(async () => expect((await look(upload)).color).toBe(ROLES[mode].primary));
       const outlined = await look(upload);
       expectPill(outlined);
       expect(outlined.transform).toBe("none");
@@ -189,8 +210,8 @@ test.describe("Builder - Material 3 is Material 3", () => {
     for (const mode of MODES) {
       await setMode(page, mode);
       const fill = stage(page).getByRole("button", { name: "Fill now" });
+      await settled(async () => expectPrimaryButton(await look(fill), mode));
       const fillLook = await look(fill);
-      expectPrimaryButton(fillLook, mode);
       /* The header's slot: MUI's small button, 30.75px. */
       expect(fillLook.height).toBeGreaterThan(30);
       expect(fillLook.height).toBeLessThan(31.5);
@@ -238,7 +259,7 @@ test.describe("Builder - Material 3 is Material 3", () => {
       await setMode(page, mode);
       const search = stage(page).locator(".dh-hero-button").first();
       await expect(search).toBeVisible();
-      expectPrimaryButton(await look(search), mode);
+      await settled(async () => expectPrimaryButton(await look(search), mode));
       /* The reference dropdowns: Material's underlined select in the 24px slot. */
       const select = stage(page).locator(".dh-inline-control .MuiInput-root").first();
       await expect(select, "the standard (underlined) variant").toBeVisible();
