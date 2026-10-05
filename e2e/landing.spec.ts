@@ -15,6 +15,9 @@ const SYSTEMS = [
   ["uoaui", "uoaui"],
 ] as const;
 
+/** What a visitor sees first: Salt DS on the left, uoaui on the right. */
+const DEFAULT_RIGHT = { name: "uoaui", id: "uoaui" } as const;
+
 const splitOf = (page: Page) =>
   page.locator("#showcase").evaluate((el) => Number((el as HTMLElement).style.getPropertyValue("--split-n")));
 const leftShot = (page: Page) =>
@@ -76,7 +79,7 @@ for (const fold of FOLDS) {
     // Both captures actually loaded, two different systems, and nothing
     // scrolls sideways.
     const suffix = fold.phone ? "-phone.webp" : ".webp";
-    for (const [shot, id] of [[leftShot(page), "salt"], [rightShot(page), "md3"]] as const) {
+    for (const [shot, id] of [[leftShot(page), "salt"], [rightShot(page), DEFAULT_RIGHT.id]] as const) {
       expect(await shot.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
       expect(await shot.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain(
         `/showcase/cmp-${id}-dark${suffix}`,
@@ -97,7 +100,7 @@ for (const width of [320, 375, 700, 1024, 1440]) {
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(width);
     };
-    // Right side first: move it off Material 3 so every Left tab is a plain pick.
+    // Right side first: every option is picked, ending on Material 3.
     for (const [name, id] of [...SYSTEMS].reverse()) {
       const label = page.locator("#showcase label.lsl-side-option", { hasText: name });
       const box = await label.boundingBox();
@@ -153,14 +156,14 @@ test("dragging the divider compares two systems, by pointer and by keyboard", as
   await expect
     .poll(async () => Math.abs((await lineX()) - target))
     .toBeLessThanOrEqual(frame.width / 100 + 2);
-  // And the clip really follows it: left of the line is Salt, right of it Material 3.
+  // And the clip really follows it: left of the line is Salt, right of it uoaui.
   const clip = await page.locator(".lsl-compare-layer").evaluate((el) => getComputedStyle(el).clipPath);
   expect(clip).toMatch(/^inset\(0px 0px 0px /);
 
   // Keyboard: the slider is focusable, named, and the arrows move it.
-  const slider = page.getByRole("slider", { name: "Divider between Salt DS and Material 3" });
+  const slider = page.getByRole("slider", { name: `Divider between Salt DS and ${DEFAULT_RIGHT.name}` });
   await slider.focus();
-  await expect(slider).toHaveAttribute("aria-valuetext", /^Salt DS \d+ percent, Material 3 \d+ percent$/);
+  await expect(slider).toHaveAttribute("aria-valuetext", new RegExp(`^Salt DS \\d+ percent, ${DEFAULT_RIGHT.name} \\d+ percent$`));
   const before = await splitOf(page);
   for (let i = 0; i < 5; i++) await page.keyboard.press("ArrowRight");
   expect(await splitOf(page)).toBeCloseTo(before + 0.05, 5);
@@ -168,7 +171,7 @@ test("dragging the divider compares two systems, by pointer and by keyboard", as
   expect(await splitOf(page)).toBe(0);
   await page.keyboard.press("End");
   expect(await splitOf(page)).toBe(1);
-  await expect(slider).toHaveAttribute("aria-valuetext", "Salt DS 100 percent, Material 3 0 percent");
+  await expect(slider).toHaveAttribute("aria-valuetext", `Salt DS 100 percent, ${DEFAULT_RIGHT.name} 0 percent`);
   // Focus is visible on the grip.
   expect(
     await page.locator(".lsl-split-grip").evaluate((el) => getComputedStyle(el).outlineStyle),
@@ -184,11 +187,16 @@ test("each side is chosen on its own, and a change sweeps in from that side", as
   // Left: the new system comes in from the left edge; the right side stays.
   await page.getByRole("tab", { name: "Carbon" }).click();
   await expect(leftShot(page)).toHaveAttribute("src", "/showcase/cmp-carbon-dark.webp");
-  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-md3-dark.webp");
+  await expect(rightShot(page)).toHaveAttribute("src", `/showcase/cmp-${DEFAULT_RIGHT.id}-dark.webp`);
   await expect.poll(() => splitOf(page), { timeout: 3000, intervals: [20] }).toBeLessThan(0.4);
   await expect.poll(() => splitOf(page), { timeout: 3000 }).toBe(0.5);
 
   // Right: the new system comes in from the right edge; the left side stays.
+  // (Material 3 first, so the pick of uoaui is a change.)
+  await rightOption(page, "Material 3").check();
+  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-md3-dark.webp");
+  await expect.poll(() => splitOf(page), { timeout: 3000, intervals: [20] }).toBeGreaterThan(0.6);
+  await expect.poll(() => splitOf(page), { timeout: 3000 }).toBe(0.5);
   await rightOption(page, "uoaui").check();
   await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-uoaui-dark.webp");
   await expect(leftShot(page)).toHaveAttribute("src", "/showcase/cmp-carbon-dark.webp");
@@ -260,7 +268,7 @@ test("a capture that takes 1.5 s: the divider stays put while it loads, then the
   // The warm-up never gets this capture (its request fails), so the pick
   // has to fetch it, and that fetch takes 1.5 s.
   let slow = false;
-  await page.route("**/showcase/cmp-uoaui-dark.webp", async (route) => {
+  await page.route("**/showcase/cmp-md3-dark.webp", async (route) => {
     if (!slow) return route.abort();
     await new Promise((r) => setTimeout(r, 1500));
     await route.continue();
@@ -270,8 +278,8 @@ test("a capture that takes 1.5 s: the divider stays put while it loads, then the
   slow = true;
   await recordDivider(page);
   const picked = await page.evaluate(() => performance.now());
-  await rightOption(page, "uoaui").check();
-  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-uoaui-dark.webp");
+  await rightOption(page, "Material 3").check();
+  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-md3-dark.webp");
   // The side that is waiting says so, quietly.
   await expect(page.locator("#showcase")).toHaveAttribute("data-waiting", "right");
   await expect.poll(async () => (await dividerLog(page)).loaded, { timeout: 8000 }).toBeGreaterThan(0);
@@ -300,9 +308,9 @@ test("a capture that is ready: the reveal starts within 300 ms of the pick", asy
   await page.goto("/", { waitUntil: "networkidle" });
   await restAfterFirstView(page);
   await page.locator(".lsl-mode-btn", { hasText: "Light" }).click();
-  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-md3-light.webp");
+  await expect(rightShot(page)).toHaveAttribute("src", `/showcase/cmp-${DEFAULT_RIGHT.id}-light.webp`);
   await page.waitForTimeout(600); // the light captures warm up
-  for (const [name, id] of [["Carbon", "carbon"], ["uoaui", "uoaui"]] as const) {
+  for (const [name, id] of [["Carbon", "carbon"], ["Material 3", "md3"]] as const) {
     await recordDivider(page);
     const picked = await page.evaluate(() => performance.now());
     await rightOption(page, name).check();
@@ -343,6 +351,7 @@ test("every capture of the current mode is warmed when the hero is in view, the 
 });
 
 const PAIRS = [
+  ["Salt DS", "uoaui"], // the pair a visitor sees first
   ["Salt DS", "Material 3"],
   ["Salt DS", "Carbon"],
   ["Fluent 2", "uoaui"],
@@ -425,9 +434,9 @@ for (const mode of ["dark", "light"] as const) {
       await page.goto("/", { waitUntil: "networkidle" });
       if (mode === "light") await page.locator(".lsl-mode-btn", { hasText: "Light" }).click();
       // Set the pair with plain picks (Right first, so no swap is involved).
-      if (right !== "Material 3") await rightOption(page, right).check();
+      if (right !== DEFAULT_RIGHT.name) await rightOption(page, right).check();
       if (left !== "Salt DS") await page.getByRole("tab", { name: left }).click();
-      if (right === "Material 3" && left !== "Salt DS") await rightOption(page, right).check();
+      await expect(rightOption(page, right)).toBeChecked();
       await expect(leftShot(page)).toHaveJSProperty("complete", true);
       await expect(rightShot(page)).toHaveJSProperty("complete", true);
 
@@ -482,12 +491,12 @@ for (const mode of ["dark", "light"] as const) {
 /* Phone width: the phone board, in both modes. At rest each half shows a
    primary button in its own system's accent. */
 for (const mode of ["dark", "light"] as const) {
-  test(`phone 375: Salt DS against Material 3, ${mode}: each half shows its own primary button`, async ({ page }) => {
+  test(`phone 375: Salt DS against ${DEFAULT_RIGHT.name}, ${mode}: each half shows its own primary button`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/", { waitUntil: "networkidle" });
     if (mode === "light") await page.locator(".lsl-mode-btn:visible").first().click();
-    for (const [shot, id] of [[leftShot(page), "salt"], [rightShot(page), "md3"]] as const) {
+    for (const [shot, id] of [[leftShot(page), "salt"], [rightShot(page), DEFAULT_RIGHT.id]] as const) {
       await expect
         .poll(() => shot.evaluate((img: HTMLImageElement) => (img.complete && img.naturalWidth > 0 ? img.currentSrc : "")))
         .toContain(`/showcase/cmp-${id}-${mode}-phone.webp`);
@@ -502,9 +511,74 @@ for (const mode of ["dark", "light"] as const) {
     const leftClip = { x: box.x + 2, y: box.y + 2, width: half - 6, height: box.height - 4 };
     const rightClip = { x: box.x + half + 4, y: box.y + 2, width: half - 6, height: box.height - 4 };
     const l = await stats(page, await page.screenshot({ clip: leftClip }), null, ACCENT["Salt DS"][mode]);
-    const r = await stats(page, await page.screenshot({ clip: rightClip }), null, ACCENT["Material 3"][mode]);
+    const r = await stats(page, await page.screenshot({ clip: rightClip }), null, ACCENT[DEFAULT_RIGHT.name][mode]);
     expect(l.accent, "Salt DS primary button on the left").toBeGreaterThan(1200);
-    expect(r.accent, "Material 3 primary button on the right").toBeGreaterThan(1200);
+    expect(r.accent, `${DEFAULT_RIGHT.name} primary button on the right`).toBeGreaterThan(1200);
+  });
+}
+
+/* The first pair a visitor sees must read. The captures are real builder
+   output and are not retouched, so this is a property of which pair is
+   shown first: on each capture of the default pair, in both modes and on
+   both boards, the primary button's label against its own fill is at least
+   4.5:1. (Material 3's dark capture, a pale label on pale lilac, is why the
+   default right-hand side is not Material 3.) */
+for (const board of [{ name: "wide", width: 1512, height: 738 }, { name: "phone", width: 375, height: 812 }] as const) {
+  test(`the default pair's primary buttons read in both modes (${board.name} board)`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width: board.width, height: board.height });
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.getByRole("tab", { name: "Salt DS" })).toHaveAttribute("aria-selected", "true");
+    await expect(rightOption(page, DEFAULT_RIGHT.name)).toBeChecked();
+    // Material 3 is still offered on both sides.
+    await expect(page.getByRole("tab", { name: "Material 3" })).toBeVisible();
+    await expect(rightOption(page, "Material 3")).toBeEnabled();
+    for (const mode of ["dark", "light"] as const) {
+      if (mode === "light") await page.locator(".lsl-mode-btn:visible").first().click();
+      for (const [shot, name] of [[leftShot(page), "Salt DS"], [rightShot(page), DEFAULT_RIGHT.name]] as const) {
+        await expect
+          .poll(() => shot.evaluate((img: HTMLImageElement) => (img.complete && img.naturalWidth > 0 ? img.currentSrc : "")))
+          .toContain(`-${mode}`);
+        const measured = await shot.evaluate(async (img: HTMLImageElement, hex: string) => {
+          await img.decode();
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext("2d")!;
+          ctx.drawImage(img, 0, 0);
+          const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const fill = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+          const near = (i: number) => Math.abs(data[i] - fill[0]) + Math.abs(data[i + 1] - fill[1]) + Math.abs(data[i + 2] - fill[2]) <= 24;
+          /* The first primary button: the box of the accent fill in the board's left half. */
+          let x0 = width, y0 = height, x1 = -1, y1 = -1, count = 0;
+          for (let y = 0; y < height; y++) for (let x = 0; x < width / 2; x++) {
+            if (!near((y * width + x) * 4)) continue;
+            count++;
+            if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+          }
+          if (count < 400) return { count, contrast: 0, ink: "" };
+          /* The label: inside the fill, the pixels furthest from it (stroke centres, past the antialiased edge). */
+          const inside: { d: number; rgb: number[] }[] = [];
+          const padX = Math.round((x1 - x0) * 0.15), padY = Math.round((y1 - y0) * 0.2);
+          for (let y = y0 + padY; y <= y1 - padY; y++) for (let x = x0 + padX; x <= x1 - padX; x++) {
+            const i = (y * width + x) * 4;
+            const rgb = [data[i], data[i + 1], data[i + 2]];
+            inside.push({ d: Math.abs(rgb[0] - fill[0]) + Math.abs(rgb[1] - fill[1]) + Math.abs(rgb[2] - fill[2]), rgb });
+          }
+          inside.sort((a, b) => b.d - a.d);
+          const top = inside.slice(0, Math.max(8, Math.floor(inside.length / 100)));
+          const ink = [0, 1, 2].map((c) => top.map((p) => p.rgb[c]).sort((a, b) => a - b)[Math.floor(top.length / 2)]);
+          const lum = (rgb: number[]) => {
+            const f = (v: number) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+            return 0.2126 * f(rgb[0]) + 0.7152 * f(rgb[1]) + 0.0722 * f(rgb[2]);
+          };
+          const [hi, lo] = [lum(ink), lum(fill)].sort((a, b) => b - a);
+          return { count, contrast: (hi + 0.05) / (lo + 0.05), ink: ink.join(",") };
+        }, ACCENT[name][mode]);
+        expect(measured.count, `${name}, ${mode}: the primary button is in the capture`).toBeGreaterThanOrEqual(400);
+        expect(measured.contrast, `${name}, ${mode}: Search label (${measured.ink}) on its fill ${ACCENT[name][mode]}`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 }
 
