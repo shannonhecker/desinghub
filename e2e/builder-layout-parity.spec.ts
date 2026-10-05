@@ -1,3 +1,12 @@
+/**
+ * Rule (5 Oct): Edit equals Present at the design width. Edit lays the
+ * canvas out at 1320px (inside a 1px frame border each side) and scales it to
+ * the stage; Present on the desktop device is full screen and re-flows
+ * fluidly at the window's width. So the Edit-matches-Present comparison is
+ * made in a 1318px window, and a wider Present window must keep the same
+ * block order, the same row grouping and the same heights for fixed-height
+ * blocks (within 1px) while its columns stretch.
+ */
 import { test, expect, type Page } from "@playwright/test";
 
 /**
@@ -91,6 +100,23 @@ async function measure(page: Page): Promise<Measure> {
   });
 }
 
+/* Order, row grouping (blocks whose tops are within 2px share a row) and the
+   heights of blocks with a pinned height, for the fluid-Present rule. */
+async function measureWide(page: Page): Promise<{ ids: string[]; rows: number[]; fixed: (number | null)[] }> {
+  return page.evaluate(() => {
+    const main = document.querySelector<HTMLElement>(".bp-device-frame .bp-main")!;
+    const els = [...main.querySelectorAll<HTMLElement>("[data-block-id]")];
+    const ids = els.map((el) => el.getAttribute("data-block-id") ?? "");
+    const tops = els.map((el) => (el.parentElement ?? el).getBoundingClientRect().top);
+    const rows: number[] = [];
+    let count = 0;
+    tops.forEach((t, i) => { if (i > 0 && Math.abs(t - tops[i - 1]) > 2) { rows.push(count); count = 0; } count++; });
+    rows.push(count);
+    const fixed = els.map((el) => (/px$/.test(el.style.height) || /px$/.test((el.parentElement as HTMLElement | null)?.style.height ?? "")) ? Math.round(el.getBoundingClientRect().height) : null);
+    return { ids, rows, fixed };
+  });
+}
+
 async function switchSystem(page: Page, label: (typeof SYSTEMS)[number]) {
   await page.getByRole("button", { name: /^Design system:/ }).click();
   await page.getByText(label, { exact: true }).last().click();
@@ -136,6 +162,19 @@ test.describe("Builder - template layout parity", () => {
     await page.setViewportSize({ width: 1318, height: 900 });
     await settle(page);
     const present = await measure(page);
+
+    /* Wider Present re-flows fluidly: same order, same rows, same fixed heights. */
+    const narrow = await measureWide(page);
+    await page.setViewportSize({ width: 2000, height: 900 });
+    await settle(page);
+    const wideM = await measureWide(page);
+    expect(wideM.ids, "block order at 2000").toEqual(narrow.ids);
+    expect(wideM.rows, "row grouping at 2000").toEqual(narrow.rows);
+    narrow.fixed.forEach((h, i) => {
+      if (h === null || wideM.fixed[i] === null) return;
+      expect.soft(Math.abs(wideM.fixed[i]! - h), `fixed-height block ${i} at 2000`).toBeLessThanOrEqual(1);
+    });
+    expect(narrow.fixed.some((h) => h !== null) || narrow.ids.length > 0).toBe(true);
     await page.setViewportSize({ width: 1440, height: 900 });
 
     await page.getByRole("button", { name: "Edit canvas" }).click();

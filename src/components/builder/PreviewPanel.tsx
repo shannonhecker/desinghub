@@ -1416,23 +1416,13 @@ export function DeviceFrame({ children, fullBleed = false }: { children: React.R
       const cs = getComputedStyle(stage);
       const width = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       const height = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-      /* A classic scrollbar takes room from the client box. The stage
-         reserves its gutter (scrollbar-gutter: stable) and never scrolls
-         sideways, so this is belt and braces: a shrink of no more than one
-         scrollbar's width, with nothing else changing, is a scrollbar
-         appearing, not the stage resizing, and must not refit the frame
-         (that refit is what made the scrollbar vanish and the fit flip
-         back, every frame: the Edit-mode shake). */
-      const scrollbar = Math.max(stage.offsetWidth - stage.clientWidth, stage.offsetHeight - stage.clientHeight);
-      setAvail((prev) => {
-        if (prev.width === width && prev.height === height) return prev;
-        if (
-          prev.width > 0 && scrollbar > 0 &&
-          width <= prev.width && prev.width - width <= scrollbar &&
-          height <= prev.height && prev.height - height <= scrollbar
-        ) return prev;
-        return { width, height };
-      });
+      /* The stage reserves its scrollbar gutter (scrollbar-gutter: stable)
+         and never scrolls sideways (overflow-x: hidden), so a scrollbar can
+         no longer change this width: that was the Edit-mode shake. No
+         heuristic here: on a classic-scrollbar machine the gutter is always
+         present, and ignoring small shrinks would let a narrowed stage clip
+         the frame. */
+      setAvail((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -1445,28 +1435,24 @@ export function DeviceFrame({ children, fullBleed = false }: { children: React.R
      responsive app, so on the stage it takes the whole window, edge to edge,
      at the window's real width, and scrolls inside the stage. No design
      width, no scale, no frame chrome. Tablet and phone keep the framed,
-     centred preview, and Edit keeps its framed canvas beside the panels. */
-  if (fullBleed && deviceMode === "desktop") {
-    return (
-      <div
-        ref={frameRef}
-        className="bp-device-frame bp-device-frame--full"
-        data-frame-zoom={1}
-        data-full-bleed="true"
-        style={{ width: "100%", height: "100%", "--dh-frame-zoom": 1 } as React.CSSProperties}
-      >
-        {children}
-      </div>
-    );
-  }
+     centred preview, and Edit keeps its framed canvas beside the panels.
+     One element in both cases, so switching device does not remount the
+     dashboard (charts would replay, grids lose their state). */
+  const full = fullBleed && deviceMode === "desktop";
+  const zoom = full ? 1 : fit.zoom;
   return (
     <motion.div
       ref={frameRef}
-      className="bp-device-frame"
-      data-frame-zoom={fit.zoom}
+      className={`bp-device-frame${full ? " bp-device-frame--full" : ""}`}
+      data-frame-zoom={zoom}
+      data-full-bleed={full ? "true" : undefined}
       initial={false}
-      style={{ zoom: fit.zoom, "--dh-frame-zoom": fit.zoom, ...(multiPage ? { minHeight: preset.height } : {}) } as React.CSSProperties}
-      animate={{ width: preset.width, maxHeight: fit.maxHeight }}
+      style={{
+        zoom,
+        "--dh-frame-zoom": zoom,
+        ...(full ? { height: "100%" } : multiPage ? { minHeight: preset.height } : {}),
+      } as unknown as React.CSSProperties}
+      animate={full ? { width: "100%", maxHeight: "100%" } : { width: preset.width, maxHeight: fit.maxHeight }}
       transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 28 }}
     >
       {children}
