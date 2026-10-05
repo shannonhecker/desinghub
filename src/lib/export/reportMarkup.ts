@@ -1,3 +1,4 @@
+import { REFERENCE_THUMBNAILS } from "../templateReferenceAssets";
 /**
  * reportMarkup - the markup of the report blocks, written once for both
  * runnable dialects (JSX for the React / Vite export, HTML for the page
@@ -980,7 +981,7 @@ export function launcherCardLines(d: Dialect, block: Block): string[] {
     `    <h2 ${d.cls}="launcher-title">${d.text(title)}</h2>`,
     ...(shown(p.tag) ? [`    <span ${d.cls}="cell-tag ${toneClass(p.tagTone === "mid" ? "mid" : "accent")}">${d.text(shown(p.tag))}</span>`] : []),
     "  </header>",
-    `  <div ${d.cls}="launcher-thumb" aria-hidden="true"></div>`,
+    `  <div ${d.cls}="launcher-thumb" aria-hidden="true">${REFERENCE_THUMBNAILS[shown(p.templateId)] ? `<img src="${d.attr(REFERENCE_THUMBNAILS[shown(p.templateId)])}" alt="" />` : ""}</div>`,
     `  <p ${d.cls}="launcher-desc">${d.text(shown(p.description))}</p>`,
     /* Several cards share one action label: the link's name says which report. */
     `  <a ${d.cls}="launcher-open" href="#" aria-label="${d.attr(`${action}: ${title}`)}">${d.text(action)}${iconSvg(d, ARROW_RIGHT_ICON, "launcher-arrow", LINK_ARROW_SIZE)}</a>`,
@@ -993,7 +994,7 @@ export function heroSearchLines(d: Dialect, block: Block): string[] {
   const p = block.props ?? {};
   const placeholder = shown(p.placeholder) || "Search";
   return [
-    `<div ${d.cls}="hero"${boxHeight(d, p)}>`,
+    `<div ${d.cls}="hero${p.referenceGraphic === "analytics" ? " hero-reference" : ""}"${boxHeight(d, p)}>`,
     `  <h1 ${d.cls}="hero-title">${d.text(shown(p.title) || "Analytics")}</h1>`,
     ...(shown(p.subtitle) ? [`  <p ${d.cls}="hero-subtitle">${d.text(shown(p.subtitle))}</p>`] : []),
     `  <div ${d.cls}="hero-search" role="search">`,

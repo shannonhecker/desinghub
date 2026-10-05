@@ -1,11 +1,17 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { TemplateGalleryControls, TemplateWorkspaceOption } from "./TemplateGalleryControls";
+import { TemplateSourceNote } from "./TemplateSourceNote";
+
+import React, { useEffect, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem } from "@/store/useBuilder";
 import {
   BUILDER_TEMPLATES,
-  TEMPLATE_ORDER,
+  INDIVIDUAL_TEMPLATE_ORDER,
+  WORKSPACE_TEMPLATE_ID,
+  templateCategory,
+  type TemplateCategory,
   type BuilderTemplate,
   type TemplateId,
 } from "@/lib/builderTemplates";
@@ -30,6 +36,7 @@ import { titleFromTemplate } from "@/lib/sessionTitle";
    framework registry. The drawer closes on selection.
    ══════════════════════════════════════════════════════════ */
 export function TemplatesDrawer() {
+  const [category, setCategory] = useState<TemplateCategory | "all">("all");
   const {
     templatesDrawerOpen,
     setTemplatesDrawerOpen,
@@ -68,7 +75,7 @@ export function TemplatesDrawer() {
 
   if (!templatesDrawerOpen) return null;
 
-  const templates: BuilderTemplate[] = TEMPLATE_ORDER.map((id) => BUILDER_TEMPLATES[id]);
+  const templates: BuilderTemplate[] = INDIVIDUAL_TEMPLATE_ORDER.filter(id => category === "all" || templateCategory(id) === category).map((id) => BUILDER_TEMPLATES[id]);
 
   const handleSelect = (tpl: BuilderTemplate) => {
     if (isGenerating) return;
@@ -116,7 +123,7 @@ export function TemplatesDrawer() {
               Browse templates
             </h2>
             <p className="templates-drawer-subtitle">
-              Each starts a full layout across header, sidebar, body, and footer. Pick a design system after.
+              Choose an individual template, or open the connected analytics workspace.
             </p>
           </div>
           <button
@@ -130,7 +137,9 @@ export function TemplatesDrawer() {
           </button>
         </header>
 
-        <div className="templates-drawer-grid" role="list">
+        <TemplateWorkspaceOption onWorkspace={() => handleSelect(BUILDER_TEMPLATES[WORKSPACE_TEMPLATE_ID])} disabled={isGenerating} />
+        <TemplateGalleryControls category={category} onCategory={setCategory} />
+        <div className="templates-drawer-grid" role="group" aria-label="Individual templates">
           {templates.map((tpl) => (
             <button
               key={tpl.id}
@@ -138,7 +147,6 @@ export function TemplatesDrawer() {
               className="templates-drawer-card"
               onClick={() => handleSelect(tpl)}
               aria-label={`Start from the ${tpl.label} template`}
-              role="listitem"
             >
               <TemplatePreview id={tpl.id as TemplateId} />
               <div className="templates-drawer-card-text">
@@ -153,6 +161,7 @@ export function TemplatesDrawer() {
             </button>
           ))}
         </div>
+        <TemplateSourceNote />
       </aside>
     </div>
   );

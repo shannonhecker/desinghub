@@ -144,6 +144,11 @@ export interface ChatMessage {
      (back-compat with persisted sessions). 'templates' renders the
      in-chat template carousel instead of a text bubble. */
   messageType?: 'templates';
+  /* Marker only: this user turn carried an image. The image itself is
+     never stored (it is sent with that one request and dropped), so the
+     transcript, local session, cloud save and share state hold this flag
+     and nothing else. */
+  attachment?: 'image';
 }
 
 /* Phase 3a (N4 Tool-Use Cards): block provenance tag. Tracks where
@@ -469,6 +474,10 @@ interface BuilderState {
   sidebarCollapsed: boolean;
   previewKey: number;
   deviceMode: DeviceMode;
+  /** A frame the screen chose on its own (a phone opens in the phone frame).
+   *  Session-only: never saved, shared or put in the undo history, so the
+   *  author's own `deviceMode` is what travels. Cleared by setDeviceMode. */
+  autoDeviceMode: DeviceMode | null;
 
   // Compare-DS mode - renders the current canvas in all four design systems
   // simultaneously (2x2 grid) so designers can compare visual output.
@@ -497,7 +506,12 @@ interface BuilderState {
 
   // Actions - Chat
   setInputText: (t: string) => void;
-  addMessage: (role: 'user' | 'ai', content: string, messageType?: ChatMessage['messageType']) => string;
+  addMessage: (
+    role: 'user' | 'ai',
+    content: string,
+    messageType?: ChatMessage['messageType'],
+    meta?: { attachment?: ChatMessage['attachment'] },
+  ) => string;
   toggleVoice: () => void;
   setGenerating: (v: boolean) => void;
   clearChat: () => void;
@@ -704,6 +718,7 @@ interface BuilderState {
   toggleChatMode: () => void;
   setChatPlacement: (p: { dock: 'free' | 'left' | 'right' | 'bottom'; x: number; y: number } | null) => void;
   setDeviceMode: (d: DeviceMode) => void;
+  setAutoDeviceMode: (d: DeviceMode | null) => void;
   toggleSidebar: () => void;
   bumpPreview: () => void;
 
@@ -855,6 +870,12 @@ function seedPages(s: Pick<BuilderState, "pages" | "activePageId" | "blocks" | "
    snapshot, autosave, share-link) MUST flush through this before serializing, or it
    captures a stale page body and silently drops the current page's in-progress edits
    — `s.blocks` only syncs back into `pages` on a page switch otherwise. */
+/** The frame the canvas renders in: the screen's automatic choice when there
+ *  is one, else the author's. */
+export function effectiveDeviceMode(s: Pick<BuilderState, "deviceMode" | "autoDeviceMode">): DeviceMode {
+  return s.autoDeviceMode ?? s.deviceMode;
+}
+
 export function flushActiveBody(
   s: Pick<BuilderState, "pages" | "activePageId" | "blocks" | "sidebarBlocks" | "zoneLayouts">,
 ): { pages: Page[]; activePageId: string } {
@@ -991,6 +1012,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   sidebarCollapsed: false,
   previewKey: 0,
   deviceMode: 'desktop',
+  autoDeviceMode: null,
   compareMode: false,
   editRendersReal: true,
   structurePadding: 'medium',
@@ -999,10 +1021,23 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   // Actions
   setInputText: (t) => set({ inputText: t }),
-  addMessage: (role, content, messageType) => {
+  addMessage: (role, content, messageType, meta) => {
     const id = uid();
     set((s) => ({
-      messages: [...s.messages, { id, role, content, timestamp: Date.now(), messageType }],
+      messages: [
+        ...s.messages,
+        /* Optional fields are set only when present: Firestore rejects an
+           undefined value, and a bare `messageType: undefined` here used
+           to block every cloud save of a session with a chat message. */
+        {
+          id,
+          role,
+          content,
+          timestamp: Date.now(),
+          ...(messageType ? { messageType } : {}),
+          ...(meta?.attachment ? { attachment: meta.attachment } : {}),
+        },
+      ],
       inputText: role === 'user' ? '' : s.inputText,
     }));
     return id;
@@ -1748,7 +1783,8 @@ export const useBuilder = create<BuilderState>((set) => ({
   toggleChatMode: () =>
     set((s) => ({ chatMode: s.chatMode === 'floating' ? 'docked' : 'floating' })),
   setChatPlacement: (p) => set({ chatPlacement: p }),
-  setDeviceMode: (d) => set({ deviceMode: d }),
+  setDeviceMode: (d) => set({ deviceMode: d, autoDeviceMode: null }),
+  setAutoDeviceMode: (d) => set({ autoDeviceMode: d }),
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   bumpPreview: () => set((s) => ({ previewKey: s.previewKey + 1 })),
 

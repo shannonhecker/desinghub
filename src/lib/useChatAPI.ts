@@ -5,10 +5,43 @@ import { useBuilder } from "@/store/useBuilder";
 import { parseAIResponse } from "./parseAIResponse";
 import { applyAIActions, type ApplyReport, type SkippedAction } from "./applyAIActions";
 import { emitToolUse } from "./toolUseEvents";
-import { cleanHistoryForAPI } from "./cleanMessageHistory";
+import { cleanHistoryForAPI, type AnthropicMessage } from "./cleanMessageHistory";
 import { buildCanvasManifest } from "./canvasManifest";
 import { toolUseToAction } from "./chatTools";
 import type { AIAction } from "./parseAIResponse";
+import type { ImageMediaType } from "./image/imageBytes";
+import { IMAGE_REJECTED_ERROR } from "./image/imageCopy";
+
+/* An image for this one turn (from prepareImageAttachment). Held only in
+   memory: it goes into the request body and is never written to the store,
+   so it cannot reach history, the local session, cloud save or share state. */
+export interface ChatTurnImage {
+  mediaType: ImageMediaType;
+  base64: string;
+  /* Optional, never sent: lets the composer show the image again if the
+     request bounces (rate limit). */
+  width?: number;
+  height?: number;
+  bytes?: number;
+  name?: string;
+}
+
+export interface SendOptions {
+  image?: ChatTurnImage;
+}
+
+/* What happened to a send, so the composer can hand an image back when
+   the request never reached the model (rate limit) instead of losing it. */
+export type SendOutcome =
+  | { status: "ok" }
+  | { status: "stopped" }
+  | { status: "failed" }
+  | { status: "rate-limited"; image?: ChatTurnImage }
+  | { status: "image-rejected" };
+
+/* The route's one reply for a rejected image: the same constant the
+   server sends (imageCopy.ts), so the two cannot drift. */
+const IMAGE_REJECTED_SERVER_ERROR = IMAGE_REJECTED_ERROR;
 
 /* ── Differentiated failure states (QW4) ──
    One copy table so ChatPanel (LifecyclePill error detection, retry
@@ -26,6 +59,8 @@ export const CHAT_ERROR_COPY = {
   auth:
     "Your sign-in has expired. Reload the page and sign in again to keep using AI. Templates and manual edits still work.",
   generic: "I'm having trouble connecting right now. Please try again in a moment.",
+  imageRejected:
+    "That image could not be used. Try a PNG, JPEG, WebP or GIF under 2 MB, or a screenshot of the part you want.",
 } as const;
 
 /* Stand-in confirmation when the model returns ONLY json action fences
@@ -57,6 +92,7 @@ export const CHAT_ERROR_PREFIXES = [
   "I could not reach the server",
   "That request was too big",
   "Your sign-in has expired",
+  "That image could not be used",
 ] as const;
 
 /* Refusal / context-overrun sentinels surfaced by the route's
@@ -82,6 +118,7 @@ type ChatErrorKind =
   | "network"
   | "too-big"
   | "auth"
+  | "image-rejected"
   | "generic";
 
 /* Replace one message's content by id (countdown ticks + retries). */
@@ -117,6 +154,9 @@ export function useChatAPI() {
   /* Ref mirrors so the stable sendMessage callback never reads stale
      closures, and the interval can be cleared on unmount. */
   const failedSendRef = useRef<FailedSend | null>(null);
+  /* The image behind a retryable failure, so Retry resends it without the
+     user attaching it again. Memory only; cleared on the next send. */
+  const failedImageRef = useRef<ChatTurnImage | null>(null);
   const rateLimitedRef = useRef(false);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -154,13 +194,16 @@ export function useChatAPI() {
     }, 1000);
   }, []);
 
-  const sendMessage = useCallback(async (userText: string): Promise<void> => {
+  const sendMessage = useCallback(async (userText: string, opts?: SendOptions): Promise<SendOutcome> => {
     /* An active 429 countdown blocks new sends until it hits zero.
        ChatPanel disables the send button too; this guard covers
        programmatic callers (chips, wizard, retries). */
-    if (rateLimitedRef.current) return;
+    if (rateLimitedRef.current) return { status: "rate-limited", image: opts?.image };
+    let outcome: SendOutcome = { status: "ok" };
     /* A fresh attempt supersedes any prior retryable failure. */
     setFailedSend(null);
+    failedImageRef.current = null;
+    const image = opts?.image ?? null;
 
     const store = useBuilder.getState();
 
@@ -205,7 +248,13 @@ export function useChatAPI() {
        stripper removes it from prior turns; only this turn carries it. */
     const manifest = buildCanvasManifest(store);
     const context = `[Current state: design_system=${store.designSystem}, mode=${store.mode}, density=${store.density}, interface_type=${store.interfaceType}, selected_components=[${store.selectedComponents.join(",")}]${selectedSuffix}\ncanvas=\n${manifest}]`;
-    history.push({ role: "user", content: `${context}\n\n${userText}` });
+    /* The image rides on this (latest) user turn only, as base64. */
+    const currentTurn: AnthropicMessage & { image?: { mediaType: ImageMediaType; data: string } } = {
+      role: "user",
+      content: `${context}\n\n${userText}`,
+    };
+    if (image) currentTurn.image = { mediaType: image.mediaType, data: image.base64 };
+    const requestMessages: (AnthropicMessage & { image?: unknown })[] = [...history, currentTurn];
 
     store.setGenerating(true);
 
@@ -250,7 +299,7 @@ export function useChatAPI() {
            DS-aware system prompt. Route validates against an
            allowlist; arbitrary strings get rejected with 400. */
         body: JSON.stringify({
-          messages: history,
+          messages: requestMessages,
           designSystem: store.designSystem,
         }),
         signal: controller.signal,
@@ -289,6 +338,17 @@ export function useChatAPI() {
         /* Staging gate (api/chat/route.ts -> requireBuilderAuth): the
            cookie expired or was never set. Not retryable until re-login. */
         if (res.status === 401) throw new Error("AUTH_REQUIRED");
+        /* The route rejected the attached image: say so plainly rather
+           than "trouble connecting". Retrying the same image would fail
+           the same way, so no Retry. */
+        if (res.status === 400 && image) {
+          let serverError = "";
+          try {
+            const body = (await res.json()) as { error?: string };
+            serverError = body.error ?? "";
+          } catch { /* ignore */ }
+          if (serverError === IMAGE_REJECTED_SERVER_ERROR) throw new Error("IMAGE_REJECTED");
+        }
         /* Server-side failure: retryable - the user's text is intact. */
         if (res.status >= 500) throw new Error("SERVER_ERROR");
         throw new Error(`API error: ${res.status}`);
@@ -438,6 +498,7 @@ export function useChatAPI() {
          Surface the retry affordance against this bubble so the user
          isn't stranded on a dead-end turn. */
       if (noTextNoActions && lastAi && lastAi.role === "ai") {
+        failedImageRef.current = image;
         setFailedSend({ messageId: lastAi.id, userText });
       }
     } catch (err: unknown) {
@@ -458,7 +519,7 @@ export function useChatAPI() {
             messages: [...msgs.slice(0, -1), { ...lastAi, content: stopped }],
           });
         }
-        return;
+        return { status: "stopped" };
       }
 
       // Cancel pending RAF on error
@@ -481,6 +542,8 @@ export function useChatAPI() {
           FALLBACK_RETRY_SECONDS;
       } else if (message === "AUTH_REQUIRED") {
         kind = "auth";
+      } else if (message === "IMAGE_REJECTED") {
+        kind = "image-rejected";
       } else if (message === "SERVER_ERROR") {
         kind = "server";
       } else if (err instanceof TypeError) {
@@ -502,7 +565,9 @@ export function useChatAPI() {
                   ? CHAT_ERROR_COPY.tooBig
                   : kind === "auth"
                     ? CHAT_ERROR_COPY.auth
-                    : CHAT_ERROR_COPY.generic;
+                    : kind === "image-rejected"
+                      ? CHAT_ERROR_COPY.imageRejected
+                      : CHAT_ERROR_COPY.generic;
 
       /* On failure, surface the error in the thread - replacing the
          "..." placeholder when one is in flight, otherwise as a new
@@ -528,9 +593,15 @@ export function useChatAPI() {
         bubbleId = after[after.length - 1].id;
       }
 
+      outcome = { status: "failed" };
       if (kind === "rate-limit") {
         startCountdown(bubbleId, waitSeconds);
+        /* The request never reached the model: hand the image back. */
+        outcome = image ? { status: "rate-limited", image } : { status: "rate-limited" };
+      } else if (kind === "image-rejected") {
+        outcome = { status: "image-rejected" };
       } else if (kind === "server" || kind === "network") {
+        failedImageRef.current = image;
         setFailedSend({ messageId: bubbleId, userText });
       }
     } finally {
@@ -540,20 +611,22 @@ export function useChatAPI() {
       // request's controller, making the second stream un-abortable.
       if (abortRef.current === controller) abortRef.current = null;
     }
+    return outcome;
   }, [setFailedSend, startCountdown]);
 
   /* Re-send the text behind the latest retryable failure. Drops the
      error bubble first so the resent history stays clean (the bubble
      would otherwise ride along as a fake assistant turn). */
-  const retryFailedSend = useCallback(async (): Promise<void> => {
+  const retryFailedSend = useCallback(async (): Promise<SendOutcome | void> => {
     const failed = failedSendRef.current;
     if (!failed) return;
     const msgs = useBuilder.getState().messages;
     useBuilder.setState({
       messages: msgs.filter((m) => m.id !== failed.messageId),
     });
+    const image = failedImageRef.current;
     setFailedSend(null);
-    await sendMessage(failed.userText);
+    return sendMessage(failed.userText, image ? { image } : undefined);
   }, [sendMessage, setFailedSend]);
 
   const abort = useCallback(() => {

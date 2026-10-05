@@ -59,8 +59,16 @@ async function openBuilder(page: Page) {
 
 async function applyTemplate(page: Page, label: string) {
   await openBuilder(page);
-  await page.getByRole("button", { name: /Browse templates/ }).click();
-  await page.getByRole("button", { name: `Use the ${label} template` }).click();
+  /* Clicked before the page has hydrated, the click is lost (the same reason
+     applyTemplateFromChat retries): click until the gallery opens. */
+  await expect(async () => {
+    const browse = page.getByRole("button", { name: /Browse templates/ });
+    if (await browse.isVisible()) await browse.click();
+    await expect(page.getByRole("list", { name: "Starting templates" })).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+  /* Analytics Home is the connected workspace: its own action, not a card. */
+  if (label === "Analytics Home") await page.getByRole("button", { name: "Open workspace" }).click();
+  else await page.getByRole("button", { name: `Use the ${label} template` }).click();
   await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
   /* FX Execution: parity is measured with the sample feed switched off
      (fxLive: Off), under the default motion setting. The feed changes
@@ -274,7 +282,11 @@ test.describe("Builder - finance templates", () => {
   });
 
   test("the left navigation collapses to a rail, opens reports, and stays collapsed", async ({ page }) => {
-    await applyTemplate(page, "ESG Analytics");
+    /* Sibling reports in the rail belong to the connected workspace (a card
+       on its own is one standalone report): open ESG from inside it. */
+    await applyTemplate(page, "Analytics Home");
+    await page.locator(".present-stage").getByRole("navigation", { name: "Workspaces" }).getByRole("button", { name: "Sustainable Investment", exact: true }).click();
+    await settle(page);
     const side = page.locator(".present-stage .bp-sidebar");
     await expect(side.getByText("Corporate governance", { exact: true })).toBeVisible();
     /* Layout widths: the frame may be zoomed to fit. */

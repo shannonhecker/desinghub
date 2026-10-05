@@ -26,7 +26,7 @@ import { ScrubNumberField } from "./ScrubNumberField";
 import { toCanonicalColumn, toDisplayColumn } from "@/lib/gridColumnCoords";
 import { spanOf } from "@/lib/export/gridSpan";
 import { normalizeColumns } from "@/lib/layoutResolver";
-import { BUILDER_TEMPLATES, TEMPLATE_ORDER, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
+import { BUILDER_TEMPLATES, INDIVIDUAL_TEMPLATE_ORDER, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
 import { titleFromTemplate } from "@/lib/sessionTitle";
 import { applyTemplateToCanvas } from "@/lib/applyTemplate";
@@ -1078,7 +1078,7 @@ function TemplatesAccordion() {
   const activeTemplateId = useBuilder((s) => s.activeTemplateId);
   const isGenerating = useBuilder((s) => s.isGenerating);
 
-  const templates: BuilderTemplate[] = TEMPLATE_ORDER.map((id) => BUILDER_TEMPLATES[id]);
+  const templates: BuilderTemplate[] = INDIVIDUAL_TEMPLATE_ORDER.map((id) => BUILDER_TEMPLATES[id]);
 
   /* Apply the template to the canvas IMMEDIATELY using the active design
      system (shared path with the wizard). Previously this only staged a

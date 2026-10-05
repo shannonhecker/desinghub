@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo, useId } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { fitFrame, FRAME_PRESETS } from "@/lib/frameFit";
 import {
@@ -24,6 +24,7 @@ import {
   TrendingUp,
   Layers,
   Filter,
+  ChevronDown,
 } from "lucide-react";
 import {
   DndContext,
@@ -45,7 +46,7 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { getEventCoordinates } from "@dnd-kit/utilities";
-import { useBuilder, type DeviceMode, type Block, type ZoneId } from "@/store/useBuilder";
+import { useBuilder, effectiveDeviceMode, type DeviceMode, type Block, type ZoneId } from "@/store/useBuilder";
 import { getTheme, getFullCSS } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { getPreviewOfficialScope } from "@/lib/officialTokens";
@@ -174,7 +175,7 @@ const SAMPLE_MESSAGES = [
    to High / Medium / Low across all DSes.
    ══════════════════════════════════════════════════════════ */
 function PreviewBar() {
-  const deviceMode = useBuilder((s) => s.deviceMode);
+  const deviceMode = useBuilder(effectiveDeviceMode);
   const setDeviceMode = useBuilder((s) => s.setDeviceMode);
   const bumpPreview = useBuilder((s) => s.bumpPreview);
   const chatOpen = useBuilder((s) => s.chatOpen);
@@ -920,6 +921,145 @@ export function navAbbreviation(label: string): string {
   return code.toUpperCase();
 }
 
+/* After a page change the dashboard remounts, which drops keyboard focus to
+   the page body. The control that made the change asks for focus back here;
+   the remounted menu or rail item takes it on mount. Matched by label, so a
+   rail item still finds itself in the report a link opened. */
+type NavFocusRequest = { to: "menu" } | { to: "rail"; label: string };
+let pendingNavFocus: NavFocusRequest | null = null;
+const requestNavFocus = (request: NavFocusRequest) => { pendingNavFocus = request; };
+/** The pending request, once: reading it clears it. */
+const takeNavFocus = (): NavFocusRequest | null => { const r = pendingNavFocus; pendingNavFocus = null; return r; };
+
+/* ══════════════════════════════════════════════════════════
+   Compact page menu - the sidebar's pages when the sidebar is not shown
+   The phone frame has no room for the sidebar, which left its pages
+   unreachable. The same items, grouped as in the rail, sit behind one
+   "Page" menu button under the header. A page changes only on an explicit
+   choice (click, Enter or Space): arrow keys move through the list, Escape
+   closes it, and focus comes back to the button after the page changes.
+   ══════════════════════════════════════════════════════════ */
+function CompactPageMenu() {
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const activePageId = useBuilder((s) => s.activePageId);
+  const openNavPage = useBuilder((s) => s.openNavPage);
+  const setSidebarBlocks = useBuilder((s) => s.setSidebarBlocks);
+  const designSystem = useBuilder((s) => s.designSystem);
+  const readOnly = usePreviewReadOnly();
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const listId = useId();
+  const labelId = useId();
+  const items = sidebarBlocks.filter((b) => b.type === "NavItem");
+  const current = (activePageId && items.some((b) => b.id === activePageId) ? activePageId : null)
+    ?? items.find((b) => b.props.active === true)?.id ?? items[0]?.id;
+
+  useEffect(() => {
+    const wanted = takeNavFocus();
+    if (wanted?.to === "menu") buttonRef.current?.focus();
+    else if (wanted) requestNavFocus(wanted);
+  }, []);
+  /* Opening moves focus to the current page; a click elsewhere closes. */
+  useEffect(() => {
+    if (!open) return;
+    listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus();
+    const away = (e: PointerEvent) => {
+      if (!listRef.current?.contains(e.target as Node) && !buttonRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [open]);
+
+  if (items.length < 2 || !current) return null;
+  /* In Edit a link to another report is not followed (it would replace the
+     canvas being edited), as in the sidebar. */
+  const unavailable = (b: Block) => !readOnly && navTemplateId(b.props.templateId) !== null && b.id !== current;
+  const choose = (block: Block) => {
+    setOpen(false);
+    if (unavailable(block)) return;
+    if (block.id === current) { buttonRef.current?.focus(); return; }
+    requestNavFocus({ to: "menu" });
+    const templateId = navTemplateId(block.props.templateId);
+    if (templateId) { openTemplateLink(BUILDER_TEMPLATES[templateId], designSystem); return; }
+    openNavPage(block.id, String(block.props.label ?? "Page"));
+    setSidebarBlocks(sidebarBlocks.map((b) => ({ ...b, props: { ...b.props, active: b.id === block.id } })));
+  };
+  const onListKey = (e: React.KeyboardEvent) => {
+    const options = [...(listRef.current?.querySelectorAll<HTMLElement>('[role="option"]:not([aria-disabled="true"])') ?? [])];
+    const at = options.indexOf(document.activeElement as HTMLElement);
+    const move = (i: number) => { e.preventDefault(); options[Math.max(0, Math.min(options.length - 1, i))]?.focus(); };
+    if (e.key === "ArrowDown") move(at + 1);
+    else if (e.key === "ArrowUp") move(at - 1);
+    else if (e.key === "Home") move(0);
+    else if (e.key === "End") move(options.length - 1);
+    else if (e.key === "Escape") { e.preventDefault(); setOpen(false); buttonRef.current?.focus(); }
+    else if (e.key === "Tab") setOpen(false);
+    else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      const block = items.find((b) => b.id === (document.activeElement as HTMLElement)?.dataset.pageId);
+      if (block) choose(block);
+    }
+  };
+  const currentLabel = String(items.find((b) => b.id === current)?.props.label ?? "Page");
+  const option = (b: Block) => (
+    <li
+      key={b.id}
+      role="option"
+      tabIndex={-1}
+      data-page-id={b.id}
+      aria-selected={b.id === current}
+      aria-disabled={unavailable(b) || undefined}
+      className="bp-page-menu-option"
+      onClick={() => choose(b)}
+    >
+      {String(b.props.label ?? "Page")}
+    </li>
+  );
+  /* Group headings in the rail head groups here too. */
+  const groups: { label: string | null; items: Block[] }[] = [];
+  for (const b of sidebarBlocks) {
+    if (b.type === "NavGroup") groups.push({ label: String(b.props.label ?? ""), items: [] });
+    else if (b.type === "NavItem") {
+      if (groups.length === 0) groups.push({ label: null, items: [] });
+      groups[groups.length - 1].items.push(b);
+    }
+  }
+  return (
+    <nav className="bp-page-menu" aria-label="Pages">
+      <div className="bp-page-menu-field">
+        <span id={labelId} className="bp-page-menu-label">Page</span>
+        <button
+          ref={buttonRef}
+          type="button"
+          className="bp-page-menu-button"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={open ? listId : undefined}
+          aria-labelledby={`${labelId} ${listId}-value`}
+          onClick={() => setOpen((o) => !o)}
+          onKeyDown={(e) => { if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); setOpen(true); } }}
+        >
+          <span id={`${listId}-value`} className="bp-page-menu-value">{currentLabel}</span>
+          <ChevronDown className="bp-page-menu-caret" size={16} strokeWidth={1.8} aria-hidden="true" />
+        </button>
+        {open ? (
+          <ul ref={listRef} id={listId} role="listbox" aria-labelledby={labelId} className="bp-page-menu-list" onKeyDown={onListKey}>
+            {groups.map((g, i) => g.label ? (
+              <li key={i} role="presentation">
+                <ul role="group" aria-label={g.label} className="bp-page-menu-group">
+                  <li role="presentation" className="bp-page-menu-group-label" aria-hidden="true">{g.label}</li>
+                  {g.items.map(option)}
+                </ul>
+              </li>
+            ) : g.items.map(option))}
+          </ul>
+        ) : null}
+      </div>
+    </nav>
+  );
+}
+
 /* ══════════════════════════════════════════════════════════
    Dashboard Sidebar - collapsible nav
    Driven by sidebarBlocks; labels are inline-editable; items can be added/removed
@@ -949,6 +1089,28 @@ function DashboardSidebar({
   const dense = sidebarLayout.dense === true;
   const railWidth = dense ? SIDEBAR_RAIL_DENSE : SIDEBAR_RAIL;
 
+  /* The sidebar's layout toolbar opens beside its frame label (CSS), so it
+     needs the label's width. */
+  const asideRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const aside = asideRef.current;
+    const tab = aside?.querySelector<HTMLElement>(":scope > .bp-frame-tab");
+    if (!aside || !tab || typeof ResizeObserver === "undefined") return;
+    const sync = () => aside.style.setProperty("--bc-frame-tab-w", `${tab.offsetWidth}px`);
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(tab);
+    return () => ro.disconnect();
+  }, [collapsed, readOnly]);
+
+  /* Focus back on the item that changed the page (see requestNavFocus). */
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const wanted = takeNavFocus();
+    if (wanted?.to !== "rail") { if (wanted) requestNavFocus(wanted); return; }
+    [...(navRef.current?.querySelectorAll<HTMLButtonElement>(".bp-nav-item") ?? [])].find((b) => b.title === wanted.label)?.focus();
+  }, []);
+
   const handleSetActive = (id: string) => {
     setSidebarBlocks(
       sidebarBlocks.map((b) => ({ ...b, props: { ...b.props, active: b.id === id } }))
@@ -966,6 +1128,7 @@ function DashboardSidebar({
 
   return (
     <motion.aside
+      ref={asideRef}
       className="bp-sidebar"
       data-tone={sidebarLayout.tone}
       data-side={sidebarLayout.side}
@@ -975,7 +1138,7 @@ function DashboardSidebar({
       transition={{ type: "spring", stiffness: 340, damping: 32 }}
     >
       {!collapsed && <FrameTab zone="sidebar" />}
-      <nav className="bp-sidebar-nav">
+      <nav className="bp-sidebar-nav" ref={navRef}>
         <ZoneDropContainer zoneId="sidebar" blocks={sidebarBlocks} direction="vertical">
           {sidebarBlocks.map((block) => {
             /* Native NavItem rendering */
@@ -1014,10 +1177,16 @@ function DashboardSidebar({
                              that report: while presenting it opens it; in
                              Edit it is just selected (opening it would
                              replace the canvas being edited). */
-                          if (readOnly) openTemplateLink(BUILDER_TEMPLATES[templateId], designSystem);
+                          if (readOnly) {
+                            if (!active) requestNavFocus({ to: "rail", label: String(block.props.label ?? "") });
+                            openTemplateLink(BUILDER_TEMPLATES[templateId], designSystem);
+                          }
                           else setSelectedBlock(block.id, "sidebar");
                           return;
                         }
+                        /* The page already open does not change or remount, so
+                           it must not leave a focus request behind. */
+                        if (!active) requestNavFocus({ to: "rail", label: String(block.props.label ?? "") });
                         openNavPage(block.id, String(block.props.label ?? "Page"));
                         handleSetActive(block.id);
                         if (!readOnly) setSelectedBlock(block.id, "sidebar");
@@ -1043,7 +1212,7 @@ function DashboardSidebar({
                             className="bp-zone-editable"
                             contentEditable={!readOnly}
                             suppressContentEditableWarning
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={readOnly ? undefined : (e) => e.stopPropagation()}
                             onBlur={(e) =>
                               updateSidebarBlockProps(block.id, {
                                 label: e.currentTarget.textContent ?? "",
@@ -1229,7 +1398,11 @@ function DashboardFooter() {
    reduced motion the width/height changes apply instantly
    (duration 0) instead of springing. */
 export function DeviceFrame({ children }: { children: React.ReactNode }) {
-  const deviceMode = useBuilder((s) => s.deviceMode);
+  const deviceMode = useBuilder(effectiveDeviceMode);
+  /* A canvas with several pages is an app the reader moves around: hold the
+     frame at its full height so a short page does not shrink and re-centre
+     it, which moved the sidebar out from under the pointer on every click. */
+  const multiPage = useBuilder((s) => s.pages.length > 1);
   const reduceMotion = useReducedMotion();
   const preset = PRESETS[deviceMode];
   const frameRef = useRef<HTMLDivElement>(null);
@@ -1258,7 +1431,7 @@ export function DeviceFrame({ children }: { children: React.ReactNode }) {
       className="bp-device-frame"
       data-frame-zoom={fit.zoom}
       initial={false}
-      style={{ zoom: fit.zoom, "--dh-frame-zoom": fit.zoom } as React.CSSProperties}
+      style={{ zoom: fit.zoom, "--dh-frame-zoom": fit.zoom, ...(multiPage ? { minHeight: preset.height } : {}) } as React.CSSProperties}
       animate={{ width: preset.width, maxHeight: fit.maxHeight }}
       transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 28 }}
     >
@@ -1313,7 +1486,7 @@ export function BuilderCanvas({
   const blocks = useBuilder((s) => s.blocks);
   const messages = useBuilder((s) => s.messages);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const deviceMode = useBuilder((s) => s.deviceMode);
+  const deviceMode = useBuilder(effectiveDeviceMode);
   const compareMode = useBuilder((s) => s.compareMode);
   const mode = useBuilder((s) => s.mode);
   const themeKey = useBuilder((s) => s.themeKey);
@@ -1382,10 +1555,15 @@ export function BuilderCanvas({
       className={`bp-dashboard preview-${designSystem} density-${density}${officialScope.className ? ` ${officialScope.className}` : ""}`}
       key={previewKey}
       data-interface={interfaceType}
+      data-compact={compact ? "" : undefined}
       {...officialScope.attrs}
     >
       <ZoneAddBar />
       {headerVisible && <DashboardHeader compact={compact} />}
+
+      {/* The sidebar's pages, only where the sidebar itself is not rendered
+          (the phone frame), so pages never appear twice. */}
+      {sidebarVisible && sidebarBlockCount > 0 && !showSidebar && <CompactPageMenu />}
 
       <div className="bp-body" data-sidebar-side={sidebarSide}>
         {showSidebar && (

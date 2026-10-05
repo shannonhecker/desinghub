@@ -3,7 +3,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import { BoxSelect, CalendarDays, CandlestickChart, Check, ChevronsRight, Clock, Layers, Maximize2, Table2, ZoomIn, ZoomOut } from "lucide-react";
+import { BoxSelect, CalendarDays, CandlestickChart, ChevronsRight, Clock, Layers, Maximize2, Table2, ZoomIn, ZoomOut } from "lucide-react";
 import { useBuilder, type DesignSystem } from "@/store/useBuilder";
 import { ensureHighchartsModules } from "@/lib/highchartsInit";
 import { getPalette } from "@/lib/categoricalPalettes";
@@ -22,6 +22,7 @@ import { executionOrderOf, feedSwitchedOn, type FeedSample } from "@/lib/executi
 import type { GridColumn } from "@/lib/dataGridModel";
 import { readThemeVars, type ThemeVars } from "./SimulatedHighchart";
 import { applyFeedView, barCountdown, buildExecutionOptions, drawPills, NARROW_CHART, type ChartFrame } from "./executionChartOptions";
+import { ExecutionRail, type RailMenu, type RailTool } from "./ExecutionRail";
 import { SimulatedDataGrid } from "./SimulatedDataGrid";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { useCanvasDataset } from "./useBoundData";
@@ -75,8 +76,6 @@ function windowLabel(from: number, to: number): string {
 }
 const KEYS_HELP = "Arrow keys pan, plus and minus zoom time, Page Up and Page Down zoom price, 0 resets, End goes back to the latest bar.";
 
-interface RailMenu { key: string; label: string; icon: React.ReactNode; items: { label: string; active: boolean; onPick: () => void }[]; multi?: boolean }
-
 export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
   const block = useBuilder((s) => (blockId ? s.blocks.find((b) => b.id === blockId) : undefined));
   const reportState = useBuilder((s) => s.reportState);
@@ -109,7 +108,6 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   const [hasWidth, setHasWidth] = useState(false);
   const [narrow, setNarrow] = useState(false);
   const [rebuilds, setRebuilds] = useState(0);
-  const [open, setOpen] = useState<string | null>(null);
   const keysHelpId = React.useId();
   const palette = useMemo(() => getPalette(system), [system]);
 
@@ -155,16 +153,6 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
     return () => observer.disconnect();
   }, [hasView, showTable]);
   useEffect(() => () => { chartRef.current?.chart?.destroy(); }, []);
-
-  /* A flyout closes on a click outside it and on Escape. */
-  useEffect(() => {
-    if (!open) return;
-    const away = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest?.(".dh-exec-rail")) setOpen(null); };
-    const key = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); setOpen(null); } };
-    document.addEventListener("mousedown", away);
-    window.addEventListener("keydown", key, true);
-    return () => { document.removeEventListener("mousedown", away); window.removeEventListener("keydown", key, true); };
-  }, [open]);
 
   const chartHeight = height - RANGE_ROW - PAD;
   const onVenueRef = useRef<(venue: string) => void>(() => {});
@@ -283,14 +271,17 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
     return <section ref={rootRef} className="dh-panel dh-exec" style={{ "--dh-panel-h": `${height}px` } as React.CSSProperties} aria-label="Execution"><p className="dh-exec-empty">No execution data.</p></section>;
   }
 
-  const set = (key: string, value: string) => { setReportState(key, value); setOpen(null); };
+  const set = (key: string, value: string) => setReportState(key, value);
   const custom = navigable && nav.status.custom && customLabel !== null;
   const icon = { size: 16, strokeWidth: 1.8, "aria-hidden": true } as const;
-  const zoomTools: { label: string; icon: React.ReactNode; onClick: () => void; pressed?: boolean; disabled?: boolean }[] = [
-    { label: "Box zoom", icon: <BoxSelect {...icon} />, onClick: nav.toggleBoxZoom, pressed: navigable && nav.status.boxArmed },
-    { label: "Zoom in", icon: <ZoomIn {...icon} />, onClick: nav.zoomIn },
-    { label: "Zoom out", icon: <ZoomOut {...icon} />, onClick: nav.zoomOut, disabled: !nav.status.zoomed },
-    { label: "Reset view", icon: <Maximize2 {...icon} />, onClick: () => { setCustomLabel(null); nav.reset(); }, disabled: !nav.status.zoomed },
+  /* The rail's Zoom group (live while presenting; shown, at rest, in Edit). */
+  const off = !navigable;
+  const zoomTools: RailTool[] = [
+    { key: "box", label: "Box zoom", icon: <BoxSelect {...icon} />, onClick: nav.toggleBoxZoom, pressed: navigable && nav.status.boxArmed, disabled: off },
+    { key: "in", label: "Zoom in", icon: <ZoomIn {...icon} />, onClick: nav.zoomIn, disabled: off },
+    { key: "out", label: "Zoom out", icon: <ZoomOut {...icon} />, onClick: nav.zoomOut, disabled: off || !nav.status.zoomed },
+    { key: "reset", label: "Reset view", icon: <Maximize2 {...icon} />, onClick: () => { setCustomLabel(null); nav.reset(); }, disabled: off || !nav.status.zoomed },
+    ...(navigable && nav.status.away ? [{ key: "live", label: "Back to live: show the latest bar", title: "Back to live", icon: <ChevronsRight {...icon} />, onClick: nav.backToLive, tone: "live" as const }] : []),
   ];
   const menus: RailMenu[] = [
     { key: "interval", label: "Interval", icon: <span className="dh-exec-rail-text">{view.interval}</span>, items: Object.keys(EXECUTION_INTERVALS).map((i) => ({ label: i, active: i === view.interval, onPick: () => set(EXECUTION_KEYS.interval, i) })) },
@@ -310,41 +301,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
          not select the block for the amend composer. */
       onClick={readOnly ? (e) => e.stopPropagation() : undefined}
     >
-      <div className="dh-exec-rail" role="toolbar" aria-label="Chart tools" aria-orientation="vertical">
-        {menus.map((m) => (
-          <div key={m.key} className="dh-exec-rail-group">
-            <button type="button" className={`dh-exec-rail-btn${open === m.key ? " is-open" : ""}`} aria-label={m.label} title={m.label} aria-haspopup="menu" aria-expanded={open === m.key} onClick={() => setOpen(open === m.key ? null : m.key)}>
-              {m.icon}
-            </button>
-            {open === m.key ? (
-              <div className="dh-exec-flyout" role="menu" aria-label={m.label}>
-                <p className="dh-exec-flyout-title">{m.label}</p>
-                {m.items.map((item) => (
-                  <button key={item.label} type="button" className="dh-exec-flyout-item" role={m.multi ? "menuitemcheckbox" : "menuitemradio"} aria-checked={item.active} onClick={item.onPick}>
-                    <span className="dh-exec-flyout-check" aria-hidden="true">{item.active ? <Check size={14} strokeWidth={2.2} /> : null}</span>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ))}
-        <span className="dh-exec-rail-sep" aria-hidden="true" />
-        {zoomTools.map((t) => (
-          <button
-            key={t.label} type="button" className="dh-exec-rail-btn" aria-label={t.label} title={navigable ? t.label : `${t.label} (while presenting)`}
-            aria-pressed={t.pressed} aria-disabled={!navigable || t.disabled ? true : undefined}
-            onClick={navigable && !t.disabled ? t.onClick : undefined}
-          >
-            {t.icon}
-          </button>
-        ))}
-        {navigable && nav.status.away ? (
-          <button type="button" className="dh-exec-rail-btn dh-exec-rail-live" aria-label="Back to live: show the latest bar" title="Back to live" onClick={nav.backToLive}>
-            <ChevronsRight size={16} strokeWidth={1.8} aria-hidden="true" />
-          </button>
-        ) : null}
-      </div>
+      <ExecutionRail menus={menus} tools={zoomTools} toolsNote={off ? "while presenting" : undefined} />
       <div className="dh-exec-main">
         <div
           ref={plotRef}
