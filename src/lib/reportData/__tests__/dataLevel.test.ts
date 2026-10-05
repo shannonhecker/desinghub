@@ -135,3 +135,38 @@ describe("context bar export", () => {
     expect(html).not.toContain("stateKey");
   });
 });
+
+describe("shares on a hierarchy grid: every row at every level", () => {
+  const block = { type: results.type, props: results.props };
+  const configured = (share: "total" | "group") => {
+    const config = { ...readPanelConfig(block, holdings, {}), share };
+    return applyPanelConfig(block, config, holdings).props.binding as DataBinding;
+  };
+  const key = (b: DataBinding) => b.display[0].key;
+
+  it("% of total: child rows are shares of the grand total, and siblings add up to their parent", () => {
+    const b = configured("total");
+    const d = grid(b, {}, true);
+    const k = key(b);
+    const rows = d.rows.filter((r) => r[GROUP_FIELD] !== "Total");
+    expect(depth(rows)).toBeGreaterThan(1);
+    for (const r of rows) expect(Number(r[k])).toBeLessThanOrEqual(100.0001);
+    /* Each parent equals the sum of its direct children (cells are rounded to 4 places). */
+    rows.forEach((r, i) => {
+      const level = Number(r._indent ?? 0);
+      const kids: number[] = [];
+      for (let j = i + 1; j < rows.length && Number(rows[j]._indent ?? 0) > level; j++) {
+        if (Number(rows[j]._indent ?? 0) === level + 1) kids.push(Number(rows[j][k]));
+      }
+      if (kids.length) expect(kids.reduce((a, v) => a + v, 0)).toBeCloseTo(Number(r[k]), 2);
+    });
+  });
+
+  it("% of row: child rows take the same share as their level's rows (no raw values)", () => {
+    const b = configured("group");
+    const d = grid(b, {}, true);
+    const k = key(b);
+    const top = d.rows.find((r) => !r._indent && r[GROUP_FIELD] !== "Total")!;
+    for (const r of d.rows.filter((x) => Number(x._indent ?? 0) > 0)) expect(r[k]).toBe(top[k]);
+  });
+});
