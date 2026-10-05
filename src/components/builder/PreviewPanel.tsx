@@ -1,7 +1,7 @@
 "use client";
 
 import { ChromeIcon } from "./ChromeIcon";
-import React, { useState, useCallback, useRef, useEffect, useMemo, useId } from "react";
+import React, { useState, useCallback, useRef, useEffect, useLayoutEffect, useMemo, useId } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { fitFrame, FRAME_PRESETS } from "@/lib/frameFit";
 import {
@@ -216,6 +216,37 @@ function PreviewBar() {
   const [dsMenuOpen, setDsMenuOpen] = useState(false);
 
   const overflowRef = useRef<HTMLDivElement | null>(null);
+  const overflowBtnRef = useRef<HTMLButtonElement | null>(null);
+  const overflowMenuRef = useRef<HTMLDivElement | null>(null);
+  /* The overflow menu is fixed to the viewport (the preview column clips an
+     absolute menu) and never runs past it: it hangs under its trigger,
+     right-aligned to it when there is room, and scrolls inside the space
+     left below (12px margin). */
+  const [overflowPos, setOverflowPos] = useState<React.CSSProperties | null>(null);
+  useLayoutEffect(() => {
+    if (!overflowOpen) { setOverflowPos(null); return; }
+    const place = () => {
+      const btn = overflowBtnRef.current;
+      const menu = overflowMenuRef.current;
+      if (!btn || !menu) return;
+      const margin = 12;
+      const r = btn.getBoundingClientRect();
+      const w = menu.offsetWidth;
+      const top = r.bottom + 6;
+      const maxHeight = Math.max(120, window.innerHeight - top - margin);
+      /* Anchor the right edge (the width can still grow by a scrollbar);
+         when that would push the left edge off screen, anchor the left. */
+      const right = Math.max(margin, window.innerWidth - r.right);
+      if (window.innerWidth - right - w >= margin) {
+        setOverflowPos({ position: "fixed", top, right, left: "auto", maxHeight });
+      } else {
+        setOverflowPos({ position: "fixed", top, left: Math.max(margin, Math.min(r.left, window.innerWidth - w - margin)), right: "auto", maxHeight });
+      }
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [overflowOpen]);
   const dsMenuRef = useRef<HTMLDivElement | null>(null);
 
   /* Dismiss overflow menu on outside click + Esc */
@@ -227,7 +258,23 @@ function PreviewBar() {
       }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOverflowOpen(false);
+      if (e.key === "Escape") {
+        setOverflowOpen(false);
+        overflowBtnRef.current?.focus();
+        return;
+      }
+      /* Arrow keys walk the items; the focused item scrolls into view. */
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        const menu = overflowMenuRef.current;
+        if (!menu) return;
+        const items = [...menu.querySelectorAll<HTMLElement>("[role^='menuitem']:not(:disabled)")];
+        if (items.length === 0) return;
+        e.preventDefault();
+        const i = items.indexOf(document.activeElement as HTMLElement);
+        const next = e.key === "ArrowDown" ? items[(i + 1) % items.length] : items[(i - 1 + items.length) % items.length];
+        next.focus();
+        next.scrollIntoView({ block: "nearest" });
+      }
     };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
@@ -466,6 +513,7 @@ function PreviewBar() {
       {/* ⋯ overflow menu - rare actions */}
       <div className="preview-bar-overflow-wrap" ref={overflowRef}>
         <button
+          ref={overflowBtnRef}
           className={`preview-bar-btn preview-bar-btn-icon${overflowOpen ? " preview-bar-btn-active" : ""}`}
           onClick={() => setOverflowOpen((v) => !v)}
           title="More actions"
@@ -476,14 +524,13 @@ function PreviewBar() {
           <ChromeIcon name="more_horiz" aria-hidden="true" style={{ fontSize: 18 }} />
         </button>
         {overflowOpen && (
-          <div className="preview-bar-overflow" role="menu">
+          <div className="preview-bar-overflow preview-bar-overflow-main" role="menu" aria-label="More canvas actions" ref={overflowMenuRef} style={overflowPos ?? { visibility: "hidden" }}>
             <button
               className={`preview-bar-overflow-item${canvasViewMode === "code" ? " preview-bar-overflow-item-active" : ""}`}
-              role="menuitemcheckbox"
-              aria-checked={canvasViewMode === "code"}
+              role="menuitem"
               onClick={() => { toggleCanvasViewMode(); setOverflowOpen(false); }}
             >
-              <span className="preview-bar-code-glyph" aria-hidden="true" style={{ fontSize: 13, width: 18, textAlign: "center" }}>&lt;/&gt;</span>
+              <ChromeIcon name="code" aria-hidden="true" />
               {canvasViewMode === "code" ? "Show UI preview" : "Show code view"}
             </button>
             <div className="preview-bar-overflow-divider" />
@@ -496,8 +543,9 @@ function PreviewBar() {
               onClick={() => { setCanvasSpacing(canvasSpacing === "tight" ? "comfortable" : "tight"); setOverflowOpen(false); }}
               title="Tight matches the real UI; Comfortable adds editing room"
             >
-              <ChromeIcon name={canvasSpacing === "comfortable" ? "check" : "fit_screen"} aria-hidden="true" />
-              Comfortable spacing
+              <ChromeIcon name="fit_screen" aria-hidden="true" />
+              <span className="preview-bar-overflow-label">Comfortable spacing</span>
+              <span className="preview-bar-overflow-state" aria-hidden="true">{canvasSpacing === "comfortable" && <ChromeIcon name="check" />}</span>
             </button>
             <div className="preview-bar-overflow-divider" />
             {/* Density submenu — checkmark on active. Normalised labels
@@ -512,8 +560,9 @@ function PreviewBar() {
                 onClick={() => { setDensity(d.key); setOverflowOpen(false); }}
                 title={d.hint}
               >
-                <ChromeIcon name={density === d.key ? "check" : "density_medium"} aria-hidden="true" />
-                {d.label}
+                <ChromeIcon name="density_medium" aria-hidden="true" />
+                <span className="preview-bar-overflow-label">{d.label}</span>
+                <span className="preview-bar-overflow-state" aria-hidden="true">{density === d.key && <ChromeIcon name="check" />}</span>
               </button>
             ))}
             <div className="preview-bar-overflow-divider" />
@@ -537,9 +586,10 @@ function PreviewBar() {
                 onClick={() => { if (opt.ready) { setPlacementMode(opt.v); setOverflowOpen(false); } }}
                 title={opt.tip}
               >
-                <ChromeIcon name={placementMode === opt.v ? "check" : opt.icon} aria-hidden="true" />
-                {opt.label}
+                <ChromeIcon name={opt.icon} aria-hidden="true" />
+                <span className="preview-bar-overflow-label">{opt.label}</span>
                 {!opt.ready && <span className="preview-bar-overflow-soon" aria-hidden="true">Soon</span>}
+                <span className="preview-bar-overflow-state" aria-hidden="true">{placementMode === opt.v && <ChromeIcon name="check" />}</span>
               </button>
             ))}
             {/* Grid columns — the body grid's RESOLUTION (not per-block coords).
@@ -561,8 +611,9 @@ function PreviewBar() {
                       onClick={() => { setZoneLayout("body", { columns: n }); setOverflowOpen(false); }}
                       title={`Body grid: ${n} columns`}
                     >
-                      <ChromeIcon name={active ? "check" : "view_column"} aria-hidden="true" />
-                      {n} columns
+                      <ChromeIcon name="view_column" aria-hidden="true" />
+                      <span className="preview-bar-overflow-label">{n} columns</span>
+                      <span className="preview-bar-overflow-state" aria-hidden="true">{active && <ChromeIcon name="check" />}</span>
                     </button>
                   );
                 })}
@@ -578,7 +629,8 @@ function PreviewBar() {
               onClick={() => { toggleCompareMode(); setOverflowOpen(false); }}
             >
               <ChromeIcon name="compare" aria-hidden="true" />
-              {compareMode ? "Exit compare mode" : "Compare design systems"}
+              <span className="preview-bar-overflow-label">{compareMode ? "Exit compare mode" : "Compare design systems"}</span>
+              <span className="preview-bar-overflow-state" aria-hidden="true">{compareMode && <ChromeIcon name="check" />}</span>
             </button>
             {/* Edit-mode fidelity: real DS components while editing (default) vs
                 the simulated facsimiles with inline text editing. */}
@@ -589,18 +641,19 @@ function PreviewBar() {
               onClick={() => { toggleEditRendersReal(); setOverflowOpen(false); }}
               title="On: covered blocks render as the real design-system component while editing; edit their text in the inspector. Off: simulated blocks with inline text editing."
             >
-              <ChromeIcon name={editRendersReal ? "check" : "auto_awesome"} aria-hidden="true" />
-              Real components in Edit
+              <ChromeIcon name="auto_awesome" aria-hidden="true" />
+              <span className="preview-bar-overflow-label">Real components in Edit</span>
+              <span className="preview-bar-overflow-state" aria-hidden="true">{editRendersReal && <ChromeIcon name="check" />}</span>
             </button>
             <div className="preview-bar-overflow-divider" />
             {/* Panels (PR2): show/hide the peripheral zones. Hiding keeps the
                 zone's blocks, so toggling back restores its content. */}
             <div className="preview-bar-overflow-group-label" aria-hidden="true">Panels</div>
             {([
-              { z: "header", label: "Header" },
-              { z: "sidebar", label: "Left panel" },
-              { z: "footer", label: "Footer" },
-            ] as const).map(({ z, label }) => {
+              { z: "header", label: "Header", icon: "top_panel_open" },
+              { z: "sidebar", label: "Left panel", icon: "left_panel_open" },
+              { z: "footer", label: "Footer", icon: "bottom_panel_open" },
+            ] as const).map(({ z, label, icon }) => {
               const visible = zoneLayouts[z].visible !== false;
               return (
                 <button
@@ -611,8 +664,9 @@ function PreviewBar() {
                   onClick={() => setZoneLayout(z, { visible: !visible })}
                   title={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
                 >
-                  <ChromeIcon name={visible ? "check_box" : "check_box_outline_blank"} aria-hidden="true" />
-                  {label}
+                  <ChromeIcon name={icon} aria-hidden="true" />
+                  <span className="preview-bar-overflow-label">{label}</span>
+                  <span className="preview-bar-overflow-state" aria-hidden="true">{visible && <ChromeIcon name="check" />}</span>
                 </button>
               );
             })}

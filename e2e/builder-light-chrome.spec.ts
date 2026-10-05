@@ -68,6 +68,100 @@ function expectAllPass(rows: Array<{ text: string; cls: string; ratio: number; n
   for (const r of rows) expect.soft(r.ratio, `${label}: "${r.text}" (${r.cls}) ${r.ratio}:1 needs ${r.need}:1`).toBeGreaterThanOrEqual(r.need);
 }
 
+/* Owner, 5 Oct: the Export menu was drawn BEHIND the canvas (the template's
+   sticky header painted over it). Every top-bar and toolbar menu must be the
+   topmost thing at each of its items, whatever the template puts in the frame. */
+for (const [width, height] of [[1512, 738], [1100, 700]] as const) {
+  test(`top-bar and toolbar menus paint above the canvas at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.route("**/api/health", (route) => route.fulfill({ json: { anthropicConfigured: false, firebaseConfigured: false } }));
+    await page.goto("/builder", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible({ timeout: 30_000 });
+    await expect(async () => {
+      const browse = page.getByRole("button", { name: /Browse templates/ });
+      if (await browse.isVisible()) await browse.click();
+      await expect(page.getByRole("list", { name: "Starting templates" })).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Use the Risk Analytics template" }).click();
+    await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Edit canvas", exact: true }).click();
+    await page.waitForTimeout(600);
+    /* With the component panel closed the menus hang over the canvas frame. */
+    const close = page.getByRole("button", { name: "Close panel", exact: true });
+    if (await close.isVisible()) await close.click();
+    await page.waitForTimeout(400);
+    for (const [trigger, menuSel] of [
+      [page.getByRole("button", { name: "Export canvas" }), ".top-bar-export-menu"],
+      [page.getByRole("button", { name: /^Design system:/ }), ".preview-bar-ds-menu"],
+      [page.getByRole("button", { name: "More canvas actions" }), ".preview-bar-overflow-main"],
+    ] as const) {
+      await trigger.click();
+      const menu = page.locator(menuSel).first();
+      await expect(menu).toBeVisible();
+      await page.waitForTimeout(250);
+      const hidden = await menu.evaluate((m) => {
+        const out: string[] = [];
+        for (const it of m.querySelectorAll("[role^='menuitem']")) {
+          const r = it.getBoundingClientRect();
+          const x = r.left + r.width / 2, y = r.top + r.height / 2;
+          /* Items scrolled out of the menu's own viewport are covered by the
+             reachability test below; here only what the menu shows counts. */
+          const mr = m.getBoundingClientRect();
+          if (r.width === 0 || y < Math.max(0, mr.top) || y > Math.min(window.innerHeight, mr.bottom)) continue;
+          const top = document.elementFromPoint(x, y);
+          if (!top || !m.contains(top)) out.push(`"${(it.textContent || "").trim().slice(0, 24)}" under ${top ? (top.getAttribute("class") || top.tagName).slice(0, 40) : "nothing"}`);
+        }
+        return out;
+      });
+      expect(hidden, `${menuSel}: every item is on top`).toEqual([]);
+      await page.keyboard.press("Escape");
+      await expect(menu).toBeHidden();
+    }
+  });
+}
+
+/* Owner, 5 Oct: the "..." menu ran off a short window and could not scroll. */
+test("the canvas overflow menu fits a 1280x600 window, scrolls to its last item and keeps one item grammar", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 600 });
+  await openBuilder(page, "dark");
+  await page.getByRole("button", { name: "More canvas actions" }).click();
+  const menu = page.getByRole("menu", { name: "More canvas actions" });
+  await expect(menu).toBeVisible();
+  const box = await menu.boundingBox();
+  expect((box?.y ?? 0) + (box?.height ?? 0), "menu bottom inside the viewport, 12px clear").toBeLessThanOrEqual(588.5);
+  expect((box?.x ?? 0) + (box?.width ?? 0), "menu right edge inside the viewport").toBeLessThanOrEqual(1280);
+  /* Roles: radio groups, toggles and actions. */
+  await expect(menu.getByRole("menuitemradio", { name: "Medium" })).toHaveAttribute("aria-checked", /true|false/);
+  await expect(menu.getByRole("menuitemcheckbox", { name: "Real components in Edit" })).toHaveAttribute("aria-checked", /true|false/);
+  await expect(menu.getByRole("menuitemcheckbox", { name: "Header" })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Show code view" })).toBeVisible();
+  /* Every item leads with an icon; a selected radio keeps its own icon. */
+  const rows = await menu.evaluate((m) => [...m.querySelectorAll("[role^='menuitem']")].map((el) => ({
+    text: (el.textContent || "").trim(),
+    lead: el.firstElementChild?.tagName.toLowerCase() === "svg" ? el.firstElementChild.getAttribute("data-icon") : null,
+    role: el.getAttribute("role"), checked: el.getAttribute("aria-checked"),
+  })));
+  for (const r of rows) expect(r.lead, `"${r.text}" has a leading icon`).toBeTruthy();
+  for (const r of rows.filter((x) => x.role === "menuitemradio" && x.checked === "true")) expect(r.lead, `selected "${r.text}" keeps its icon`).not.toBe("check");
+  /* The last item scrolls into view and works. */
+  const last = menu.getByRole("menuitem", { name: "Pop out to window" });
+  await last.scrollIntoViewIfNeeded();
+  await expect(last).toBeInViewport();
+  const refresh = menu.getByRole("menuitem", { name: "Refresh preview" });
+  await refresh.scrollIntoViewIfNeeded();
+  await refresh.click();
+  await expect(menu).toBeHidden();
+  /* Keyboard: arrows walk the items, Escape returns focus to the trigger. */
+  await page.getByRole("button", { name: "More canvas actions" }).click();
+  await expect(menu).toBeVisible();
+  for (let i = 0; i < 30; i++) await page.keyboard.press("ArrowDown");
+  const focusedInView = await page.evaluate(() => { const el = document.activeElement as HTMLElement; const r = el.getBoundingClientRect(); return el.getAttribute("role")?.startsWith("menuitem") && r.top >= 0 && r.bottom <= window.innerHeight; });
+  expect(focusedInView, "the focused item is in view").toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(page.getByRole("button", { name: "More canvas actions" })).toBeFocused();
+});
+
 for (const mode of ["light", "dark"] as const) {
   test.describe(`${mode} chrome`, () => {
     test("the Sessions drawer is readable: title, helper, session name, date and New session", async ({ page }) => {

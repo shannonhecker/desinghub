@@ -9782,6 +9782,56 @@ th[class*="-th"] > span { vertical-align: middle; }
 }
 .builder-light .preview-bar-overflow-group-label { color: rgba(0, 0, 0, 0.55); }
 .builder-light .preview-bar-overflow-divider { background: rgba(0, 0, 0, 0.06); }
+/* One item grammar (owner, 5 Oct): leading icon column, label, trailing state
+   column. The menu scrolls inside the viewport (its max-height and fixed
+   position come from PreviewPanel). Single-choice rows keep their icon and
+   show a trailing check on a filled tonal row; toggles show the same
+   trailing check; actions have no state. */
+.preview-bar-overflow {
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.preview-bar-overflow-item {
+  min-height: calc(var(--insp-control-h) + var(--bc-gap-xs));
+  gap: var(--bc-gap-sm);
+}
+.preview-bar-overflow-item > .chrome-icon:first-child { flex: none; width: var(--insp-caret); }
+.preview-bar-overflow-label { flex: 1; min-width: 0; }
+.preview-bar-overflow-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--insp-caret);
+  margin-left: auto;
+}
+.preview-bar-overflow-item .preview-bar-overflow-state .chrome-icon { color: var(--bc-accent); }
+.preview-bar-overflow-item.preview-bar-overflow-item-active .chrome-icon:first-child { color: inherit; }
+.preview-bar-overflow-item[role="menuitemradio"].preview-bar-overflow-item-active { background: var(--insp-seg-on); box-shadow: none; }
+.preview-bar-overflow-item[role="menuitemcheckbox"].preview-bar-overflow-item-active:not(:hover) { background: transparent; }
+.preview-bar-overflow-item:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: calc(-1 * var(--insp-focus-w));
+}
+.preview-bar-overflow-group-label {
+  padding: var(--bc-gap-sm) var(--insp-field-pad-x) var(--bc-gap-xs);
+  font: var(--insp-label-type);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--insp-label-fg);
+}
+.preview-bar-overflow-divider {
+  height: var(--bc-hairline);
+  margin: var(--bc-gap-xs) 0;
+  background: var(--insp-hairline);
+}
+.builder-light .preview-bar-overflow-group-label { color: var(--insp-label-fg); }
+.builder-light .preview-bar-overflow-divider { background: var(--insp-hairline); }
+.builder-light .preview-bar-overflow-item.preview-bar-overflow-item-active .chrome-icon:first-child { color: inherit; }
+.builder-light .preview-bar-overflow-item[role="menuitemradio"].preview-bar-overflow-item-active { background: var(--bc-bg-hover); }
 
 .bp-dimensions-sr {
   position: absolute;
@@ -12675,6 +12725,12 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
      scales it to the stage (frameFit.ts). */
   box-sizing: border-box;
   flex: 1;
+  /* The canvas is its own stacking context. Without it the frame (static,
+     z-index auto) let the template's own layers (the sticky .bp-header at
+     z-index 10, DS popovers, etc.) join the app shell's stacking context and
+     paint over the top bar's z-index 10 context, i.e. over the open Export
+     menu. Isolated, nothing inside the canvas can rise above the chrome. */
+  isolation: isolate;
 }
 
 /* ── Dashboard skeleton inside the frame ── */
