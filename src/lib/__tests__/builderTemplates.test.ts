@@ -38,3 +38,28 @@ describe("analytics-dashboard canonical structure", () => {
     expect(ad.zoneLayouts?.body?.columns).toBe(12);
   });
 });
+
+/* The Settings profile form: every control has a label of its own, and the
+   fields sit two to a row so a value (an email address) fits its field. */
+describe("settings-page profile form", () => {
+  const body = BUILDER_TEMPLATES["settings-page"].body;
+  const fields = body.filter((b) => b.type === "SimulatedTextInput" || b.type === "SimulatedDropdown");
+
+  it("the time zone select is labelled, not named by its own value", () => {
+    const tz = body.find((b) => b.type === "SimulatedDropdown")!;
+    expect(tz.props.label).toBe("Time zone");
+    expect(tz.props.label).not.toBe(tz.props.value);
+  });
+
+  it("every field has a label that is not its value", () => {
+    expect(fields.length).toBe(5);
+    for (const f of fields) {
+      expect(String(f.props.label ?? "")).not.toBe("");
+      expect(f.props.label).not.toBe(f.props.value);
+    }
+  });
+
+  it("the fields share one width: half the measure", () => {
+    expect(new Set(fields.map((f) => f.layout?.width))).toEqual(new Set(["6fr"]));
+  });
+});

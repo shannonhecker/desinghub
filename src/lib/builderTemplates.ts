@@ -253,11 +253,13 @@ const settingsPage: BuilderTemplate = {
     /* Current-value fields: `value` renders solid in the read-only Preview (real
        Salt/MUI Input show value); `placeholder` mirrors it so the edit canvas
        (which reads placeholder) stays populated rather than blank. */
-    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", value: settingsProfile.fullName, placeholder: settingsProfile.fullName }, layout: { width: "12fr" } },
-    { id: tid("sp-display"), type: "SimulatedTextInput", props: { label: "Display name", value: settingsProfile.displayName, placeholder: settingsProfile.displayName }, layout: { width: "12fr" } },
-    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", value: settingsProfile.email, placeholder: settingsProfile.email }, layout: { width: "12fr" } },
-    { id: tid("sp-title"), type: "SimulatedTextInput", props: { label: "Job title", value: settingsProfile.jobTitle, placeholder: settingsProfile.jobTitle }, layout: { width: "12fr" } },
-    { id: tid("sp-tz"), type: "SimulatedDropdown", props: { value: settingsProfile.timezone, placeholder: settingsProfile.timezone }, layout: { width: "12fr" } },
+    /* A form in two columns: each field is half the measure, wide enough for
+       its value (an email address) without running the full 960px. */
+    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", value: settingsProfile.fullName, placeholder: settingsProfile.fullName }, layout: { width: "6fr" } },
+    { id: tid("sp-display"), type: "SimulatedTextInput", props: { label: "Display name", value: settingsProfile.displayName, placeholder: settingsProfile.displayName }, layout: { width: "6fr" } },
+    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", value: settingsProfile.email, placeholder: settingsProfile.email }, layout: { width: "6fr" } },
+    { id: tid("sp-title"), type: "SimulatedTextInput", props: { label: "Job title", value: settingsProfile.jobTitle, placeholder: settingsProfile.jobTitle }, layout: { width: "6fr" } },
+    { id: tid("sp-tz"), type: "SimulatedDropdown", props: { label: "Time zone", value: settingsProfile.timezone, placeholder: settingsProfile.timezone }, layout: { width: "6fr" } },
 
     /* DANGER ZONE - isolated last */
     { id: tid("sp-t3"), type: "SimulatedTitle", props: { text: "Danger zone", level: "h3" }, layout: { width: "12fr" } },
