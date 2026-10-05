@@ -89,4 +89,21 @@ describe("useOverlayEscape", () => {
     unmount();
     combo.remove();
   });
+
+  it("a tree row closes the overlay (an expanded branch is not an open popup); an open dropdown keeps its Escape", () => {
+    const onClose = vi.fn();
+    const { unmount } = render(<Overlay open onClose={onClose} />);
+    const host = document.body.appendChild(document.createElement("div"));
+    host.innerHTML = '<ul role="tree"><li role="treeitem" aria-expanded="true" id="branch"><ul role="group"><li role="treeitem" id="leaf">Sector</li></ul></li></ul>'
+      + '<button aria-haspopup="listbox" aria-expanded="true" id="dropdown">Sum</button>';
+    press(host.querySelector("#leaf")!);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    press(host.querySelector("#branch")!);
+    expect(onClose).toHaveBeenCalledTimes(2);
+    const open = press(host.querySelector("#dropdown")!);
+    expect(onClose).toHaveBeenCalledTimes(2);
+    expect(open.reached).toBe(true);
+    unmount();
+    host.remove();
+  });
 });

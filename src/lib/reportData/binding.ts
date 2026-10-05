@@ -9,7 +9,7 @@
 
 import type { GridCell, GridColumn, GridColumnKind, GridLeafColumn, GridRow } from "../dataGridModel";
 import { applyComputed, type ComputedSpec } from "./computed";
-import { cellKey, runQuery, type FilterSpec, type MeasureSpec, type QueryResult } from "./query";
+import { cellKey, runQuery, type CellMap, type FilterSpec, type MeasureSpec, type QueryResult } from "./query";
 import { GROUP_FIELD, RANK_FIELD, gridField, toCategorySeries, toGrid, toParts, type MeasureDisplay } from "./shape";
 import { fieldOf, tableOf, type DataRow, type ReportDataset } from "./types";
 
@@ -379,9 +379,28 @@ export function resolveBinding(source: DataBinding, dataset: ReportDataset, stat
     const levels = groupBy && result.pivots.length === 0 ? levelsOf(binding, groupBy).filter((k) => fieldOf(table, k)) : [];
     if (levels.length > 0 && groupBy) {
       const sort = binding.sort ? { by: dyn(binding.sort.by, state), dir: binding.sort.dir } : undefined;
+      /* Shares: each deeper row is a share of the same grand total as the
+         groups ("% of total"), or of its own row ("% of row"), never a raw value. */
+      const grand = binding.share === "total"
+        ? (runQuery(table, { measures: binding.measures, filters, total: true }).total ?? {})
+        : undefined;
+      const asShare = (r: QueryResult): QueryResult => {
+        if (!binding.share) return r;
+        const toShare = (cells: CellMap): CellMap => {
+          const out: CellMap = { ...cells };
+          for (const m of r.measures) {
+            const k = cellKey(null, m);
+            const v = cells[k];
+            const denom = grand ? grand[k] : v;
+            out[k] = v === null || v === undefined || !denom ? null : (v / denom) * 100;
+          }
+          return out;
+        };
+        return { ...r, cells: r.cells.map(toShare) };
+      };
       const under = (scope: FilterSpec[], parent: string, top: string, depth: number): GridRow[] => {
         const dim = levels[depth - 1];
-        const sub = applyComputed(runQuery(table, { groupBy: dim, measures: binding.measures, filters: scope, sort }), computed, result.total);
+        const sub = applyComputed(asShare(runQuery(table, { groupBy: dim, measures: binding.measures, filters: scope, sort })), computed, result.total);
         const children = toGrid(sub, shown, { groupHeader: header }).rows;
         /* A level that only repeats its parent adds nothing. */
         if (children.length === 1 && children[0][GROUP_FIELD] === parent) return [];

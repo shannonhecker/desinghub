@@ -776,7 +776,14 @@ test.describe("Builder - FX Execution sample orders, with the feed live", () => 
       /* The menu has focus; the reader moves off its first item. */
       await expect.poll(at).not.toBe("");
       const firstItem = (await page.getByRole("menuitem").first().textContent())!.trim();
-      await expect(async () => { await page.keyboard.press("ArrowDown"); expect(await at()).toMatch(/^(Add order|Sell stop|Amend)/); }).toPass({ timeout: 5_000 });
+      /* Salt (floating-ui) moves focus a frame after the key: wait for each press to land
+         before reading it, or a stale read sends one press too many. */
+      await expect(async () => {
+        const before = await at();
+        await page.keyboard.press("ArrowDown");
+        await expect.poll(at, { timeout: 1_000 }).not.toBe(before);
+        expect(await at()).toMatch(/^(Add order|Sell stop|Amend)/);
+      }).toPass({ timeout: 5_000 });
       const item = await at();
       expect(item).not.toBe(firstItem);
       const from = await bars();

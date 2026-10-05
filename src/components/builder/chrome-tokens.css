@@ -216,8 +216,24 @@
   --dh-panel-tool-size:  28px;
   --dh-focus-ring:       2px;
   --bc-expand-gap:       16px;
-  --dh-config-w:         320px;
-  --dh-config-header-h:  56px;
+  /* The panel Configuration dialog (RealConfigDialog). */
+  --dh-cfg-w:            560px;
+  --dh-cfg-gap:          12px;
+  --dh-cfg-pad:          8px;
+  --dh-cfg-pad-wide:     12px;
+  --dh-cfg-indent:       16px;
+  --dh-cfg-row:          32px;
+  --dh-cfg-target:       24px;
+  --dh-cfg-icon:         16px;
+  --dh-cfg-tag:          11px;
+  --dh-cfg-tag-w:        28px;
+  --dh-cfg-small:        13px;
+  --dh-cfg-radius:       4px;
+  --dh-cfg-pane-h:       264px;
+  --dh-cfg-type-w:       200px;
+  --dh-cfg-display-w:    280px;
+  --dh-cfg-tip-w:        240px;
+  --dh-cfg-line:         color-mix(in srgb, currentColor 16%, transparent);
   /* Leading glyph size in a labelled canvas-toolbar button. */
   --bc-toolbar-glyph: 16px;
   /* Width of the accent bar on a selected master-grid row. */
