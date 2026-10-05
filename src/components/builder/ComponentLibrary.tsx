@@ -24,6 +24,7 @@ import {
 } from "@/lib/blockRegistry";
 import { MiniPreview } from "./MiniPreview";
 import { ScrubNumberField } from "./ScrubNumberField";
+import { useInspectorPin } from "@/store/useInspectorPin";
 import { InspectorSwitch } from "@/lib/blockRegistry";
 import { plainBlockName } from "@/lib/blockNames";
 import { toCanonicalColumn, toDisplayColumn } from "@/lib/gridColumnCoords";
@@ -264,6 +265,34 @@ export function ComponentLibrary() {
     if (bodyRef.current) bodyRef.current.scrollTop = 0;
   }, [selectedBlockId]);
 
+  /* Back from a selected block to the library and templates (owner, 5 Oct:
+     there was no visible way back). Clears the selection, which puts the
+     panel in browse mode at the top; the panel stays open at the same width,
+     so the canvas does not move. Focus lands on the panel's title so
+     keyboard and screen-reader users arrive in the new view. */
+  const titleRef = useRef<HTMLSpanElement | null>(null);
+  const focusTitleRef = useRef(false);
+  const goBackToLibrary = () => {
+    focusTitleRef.current = true;
+    useBuilder.getState().clearSelection();
+    useInspectorPin.getState().unpin();
+  };
+  useEffect(() => {
+    if (!selectedBlockId && focusTitleRef.current) {
+      focusTitleRef.current = false;
+      titleRef.current?.focus();
+    }
+  }, [selectedBlockId]);
+  /* Escape with focus inside the panel but not in a field does the same. */
+  const onPanelKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Escape" || e.defaultPrevented || !selectedBlockId) return;
+    const t = e.target as HTMLElement;
+    if (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || t.isContentEditable) return;
+    e.preventDefault();
+    e.stopPropagation();
+    goBackToLibrary();
+  };
+
   /* Escape inside a panel field leaves the field and stops there (the
      builder's own Escape, which clears the selection, is for the canvas). */
   const onStackKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -278,14 +307,20 @@ export function ComponentLibrary() {
 
   return (
     <HoverContext.Provider value={hoverCtx}>
-    <div className="component-library">
+    <div className="component-library" onKeyDown={onPanelKeyDown}>
       {/* Hover-preview overlay - positioned via portal into document.body
           so it escapes the sidebar's overflow clipping. */}
       <HoverPreview state={hoverState} />
 
       <div className="lib-header">
-        <div className="lib-header-text">
-          <span className="lib-header-title">
+        <div className={`lib-header-text${selectedBlock && FieldsComponent ? " lib-header-text--inspect" : ""}`}>
+          {selectedBlock && FieldsComponent && (
+            <button type="button" className="lib-back-btn" onClick={goBackToLibrary}>
+              <ChromeIcon name="chevron_left" />
+              <span>Components and templates</span>
+            </button>
+          )}
+          <span className="lib-header-title" ref={titleRef} tabIndex={-1}>
             {selectedBlock && FieldsComponent ? plainBlockName(selectedBlock.type) : "Components"}
           </span>
           {selectedBlock && FieldsComponent && (

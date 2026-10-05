@@ -18075,6 +18075,37 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Back to the library and templates (inspect mode): a quiet text button
+   above the title, on the panel's inset, level with the close button. */
+.lib-header-text--inspect { padding-top: 0; gap: var(--bc-gap-xs); }
+.lib-back-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xxs);
+  height: var(--insp-icon-btn);
+  /* The chevron's edge meets the inset; the fill extends past it on hover. */
+  margin-left: calc(-1 * var(--insp-icon-btn-pad));
+  padding: 0 var(--bc-gap-sm) 0 var(--bc-gap-xxs);
+  border: 0;
+  border-radius: var(--insp-radius);
+  background: transparent;
+  color: var(--insp-label-fg);
+  font: var(--insp-label-type);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+}
+.lib-back-btn .chrome-icon { font-size: var(--insp-caret); }
+.lib-back-btn:hover { background: var(--insp-field-bg-hover); color: var(--insp-field-fg); }
+.lib-back-btn:focus-visible,
+.lib-header-title:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+  border-radius: var(--insp-radius-inner);
+}
+.lib-header-title:focus { outline: none; }
+.lib-header-title:focus-visible { outline: var(--insp-focus-w) solid var(--insp-focus); }
 .lib-close-btn {
   flex-shrink: 0;
   width: var(--insp-icon-btn);

@@ -458,3 +458,81 @@ test("the hover pill on a second-row block is clear of other blocks and does not
   expect(pinned.hits).toEqual([]);
   await page.screenshot({ path: "test-results/hover-pill-row2.png" });
 });
+
+test.describe("back from a selected block to the library and templates", () => {
+  const canvas = (page: Page) => page.evaluate(() => {
+    const frame = document.querySelector(".bp-device-frame") as HTMLElement;
+    return { zoom: frame.getAttribute("data-frame-zoom"), b: [...document.querySelectorAll(".bp-main [data-block-id]")].slice(0, 4).map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round); }) };
+  });
+  const back = (page: Page) => page.locator(".component-sidebar").getByRole("button", { name: "Components and templates", exact: true });
+
+  test("the back control clears the selection, shows Templates, keeps the panel open and the canvas still", async ({ page }) => {
+    await openAnalyticsInEdit(page);
+    await expect(back(page)).toHaveCount(0);
+    await select(page, "tpl-ad-kpi-1-");
+    await page.waitForTimeout(400);
+    const before = await canvas(page);
+    await expect(back(page)).toBeVisible();
+    const box = (await back(page).boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(24);
+    await back(page).click();
+    await expect(page.locator(".inspector-stack")).toHaveCount(0);
+    await expect(page.locator(".canvas-block.is-selected, .hover-inspector.is-pinned")).toHaveCount(0);
+    await expect(page.locator(".component-sidebar")).toBeVisible();
+    await expect(page.locator(".component-sidebar .lib-templates-head")).toBeInViewport();
+    await expect(page.locator(".component-sidebar .lib-header-title")).toHaveText("Components");
+    await page.waitForTimeout(400);
+    expect(await canvas(page)).toEqual(before);
+  });
+
+  test("keyboard: Enter on the back control goes back and focus lands in the panel; Escape on a panel control goes back, Escape in a field does not", async ({ page }) => {
+    await openAnalyticsInEdit(page);
+    await select(page, "tpl-ad-kpi-1-");
+    await back(page).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".inspector-stack")).toHaveCount(0);
+    expect(await page.evaluate(() => !!document.activeElement?.closest(".component-sidebar"))).toBe(true);
+
+    await select(page, "tpl-ad-kpi-1-");
+    const label = page.getByRole("textbox", { name: "Label", exact: true });
+    await label.click();
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".inspector-stack")).toBeVisible();
+    await page.locator(".inspector-section-head", { hasText: "Size" }).focus();
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".inspector-stack")).toHaveCount(0);
+    await expect(page.locator(".component-sidebar")).toBeVisible();
+  });
+
+  test("phone: the sheet stays open in browse after going back", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openAnalyticsEditNoPanel(page);
+    await select(page, "tpl-ad-kpi-1-");
+    await expect(back(page)).toBeInViewport();
+    await back(page).click();
+    await expect(page.locator(".component-sidebar")).toBeVisible();
+    await expect(page.locator(".component-sidebar .lib-header-title")).toHaveText("Components");
+  });
+
+  for (const mode of ["dark", "light"] as const) {
+    test(`${mode}: the back label clears 4.5:1`, async ({ page }) => {
+      await openAnalyticsInEdit(page);
+      if (mode === "light") await page.getByRole("button", { name: "Switch to light mode" }).click();
+      await select(page, "tpl-ad-kpi-1-");
+      const ratio = await back(page).locator("span").evaluate((el) => {
+        const parse = (s: string) => { const p = s.match(/rgba?\(([^)]+)\)/)![1].split(",").map(Number); return { r: p[0], g: p[1], b: p[2], a: p[3] ?? 1 }; };
+        const over = (t: { r: number; g: number; b: number; a: number }, b: { r: number; g: number; b: number }) => ({ r: t.r * t.a + b.r * (1 - t.a), g: t.g * t.a + b.g * (1 - t.a), b: t.b * t.a + b.b * (1 - t.a) });
+        const lum = (c: { r: number; g: number; b: number }) => { const f = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+        const stack: Array<{ r: number; g: number; b: number; a: number }> = [];
+        for (let n: Element | null = el; n; n = n.parentElement) { const c = parse(getComputedStyle(n).backgroundColor); if (c.a > 0) { stack.push(c); if (c.a >= 1) break; } }
+        let bg = { r: 255, g: 255, b: 255 };
+        for (let i = stack.length - 1; i >= 0; i--) bg = over(stack[i], bg);
+        const fg = over(parse(getComputedStyle(el).color), bg);
+        const a = lum(fg), b = lum(bg);
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      });
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
+      await page.screenshot({ path: `test-results/back-${mode}.png` });
+    });
+  }
+});
