@@ -382,18 +382,53 @@ test.describe("panel auto-open", () => {
     await expect(built.or(ds).first()).toBeVisible();
     if (!(await built.isVisible())) await ds.click();
     await expect(built).toBeVisible();
+    /* The panel is there with the first blocks (no later open); what still
+       moves is the chat column sliding open (its min-width transition narrows
+       the stage, which re-fits the frame) and the blocks' entrance replaying
+       when generation ends. Measure only once the canvas has truly settled:
+       generation finished, no layout-affecting transition or animation on
+       the stage's ancestors or inside the frame, and the zoom and block
+       rects identical over ten consecutive frames. */
     await expect(page.locator(".component-sidebar")).toBeVisible();
-    await page.waitForTimeout(800);
+    await expect(page.getByRole("button", { name: "Stop generating" })).toHaveCount(0);
     const rects = () => page.evaluate(() => {
       const frame = document.querySelector(".bp-device-frame") as HTMLElement;
       return { zoom: frame.getAttribute("data-frame-zoom"), b: [...document.querySelectorAll(".bp-main [data-block-id]")].slice(0, 4).map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width].map(Math.round); }) };
     });
+    const settled = async () => {
+      await expect.poll(() => page.evaluate(async () => {
+        const layoutProps = /width|height|flex|transform|margin|padding|left|right|top|bottom|inset|zoom/;
+        const busy = () => document.getAnimations().some((a) => {
+          const target = (a.effect as KeyframeEffect | null)?.target as Element | null;
+          if (!target) return false;
+          const name = (a as CSSAnimation).animationName ?? "";
+          const prop = (a as CSSTransition).transitionProperty ?? "";
+          if (name === "bp-pulse") return false;
+          const onStage = !!target.closest(".preview-side, .content-split");
+          const inChat = !!target.closest(".chat-slide, .chat-layout");
+          if (!onStage) return false;
+          if (inChat) return prop ? layoutProps.test(prop) : false;
+          return prop ? layoutProps.test(prop) : true;
+        });
+        const frame = document.querySelector(".bp-device-frame") as HTMLElement | null;
+        if (!frame) return "no frame";
+        const read = () => JSON.stringify([frame.getAttribute("data-frame-zoom"), ...[...document.querySelectorAll(".bp-main [data-block-id]")].slice(0, 4).map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; })]);
+        const first = read();
+        for (let i = 0; i < 10; i++) {
+          await new Promise(requestAnimationFrame);
+          if (busy()) return "animating";
+          if (read() !== first) return "moving";
+        }
+        return "settled";
+      }), { timeout: 20_000, intervals: [100] }).toBe("settled");
+    };
+    await settled();
     const before = await rects();
     const first = page.locator(".bp-main [data-block-id]").first();
     await first.focus();
     await first.press("Enter");
     await expect(page.locator(".inspector-stack")).toBeVisible();
-    await page.waitForTimeout(400);
+    await settled();
     expect(await rects()).toEqual(before);
   });
 });
