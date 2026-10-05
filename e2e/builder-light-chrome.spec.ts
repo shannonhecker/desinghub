@@ -29,7 +29,7 @@ const CONTRAST = `(function(root) {
     const bg = bgOf(el); const fgc = fg.a < 1 ? over(fg, bg) : fg;
     const size = parseFloat(cs.fontSize); const bold = parseInt(cs.fontWeight, 10) >= 700;
     const need = icon ? 3 : (size >= 24 || (size >= 18.66 && bold)) ? 3 : 4.5;
-    out.push({ text: (icon ? "icon " : "") + el.textContent.trim().slice(0, 30), cls: (el.className || "").toString().slice(0, 40), ratio: Math.round(ratio(fgc, bg) * 100) / 100, need });
+    out.push({ text: (icon ? "icon " : "") + el.textContent.trim().slice(0, 30), cls: (el.getAttribute("class") || "").slice(0, 40), ratio: Math.round(ratio(fgc, bg) * 100) / 100, need });
   }
   return out;
 })`;
