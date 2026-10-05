@@ -11,6 +11,7 @@ import {
   type SampleImageCategory,
 } from "@/lib/sampleImages";
 import { beginHistoryTransaction } from "@/lib/builderHistory";
+import { PANEL_DEFAULT_HEIGHT } from "@/lib/panelMetrics";
 
 /* ═══════════════════════════════════════════════════════════
    Block Registry - schema-driven single source of truth.
@@ -146,7 +147,9 @@ type FieldDef =
   | { type: "textarea"; propKey: string; label: string; rows?: number }
   | { type: "select"; propKey: string; label: string; options: { value: string; label: string }[] }
   | { type: "toggle"; propKey: string; label: string }
-  | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string }
+  /** `fallback`: what the block draws while the prop is unset, so the
+     read-out matches the canvas (defaults to `min`). */
+  | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string; fallback?: (props: Record<string, unknown>) => number }
   /** Stock-image picker: a categorized grid of verified stock photos +
      a paste-your-own-URL input. Writes a URL to `propKey` (the block's
      `src`). */
@@ -167,7 +170,9 @@ const PANEL_FIELDS: FieldDef[] = [
   { type: "toggle", propKey: "panel", label: "Framed panel" },
   { type: "text", propKey: "subtitle", label: "Subtitle (framed panel)", placeholder: "e.g. (Stacked)" },
   { type: "text", propKey: "viewByCsv", label: "View by options (framed panel)", placeholder: "Asset type, Region" },
-  { type: "range", propKey: "height", label: "Height", min: 200, max: 640, suffix: "px" },
+  /* Unset, a bare chart is 250 px tall (SimulatedHighchart) and a framed one
+     the panel default. */
+  { type: "range", propKey: "height", label: "Height", min: 200, max: 640, suffix: "px", fallback: (p) => (p.panel === true ? PANEL_DEFAULT_HEIGHT : 250) },
 ];
 const CATEGORY_CHART_FIELDS: FieldDef[] = [
   { type: "text", propKey: "title", label: "Title" },
@@ -362,7 +367,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
             );
           }
           case "range": {
-            const val = Number(props[f.propKey] ?? f.min ?? 0);
+            const val = Number(props[f.propKey] ?? f.fallback?.(props) ?? f.min ?? 0);
             return (
               <InspectorField key={i} label={f.label} htmlFor={id} value={`${val}${f.suffix ? (f.suffix === "%" ? "%" : ` ${f.suffix}`) : ""}`}>
                 <input id={id} className="inspector-slider" type="range" aria-label={f.label} aria-valuetext={`${val}${f.suffix ?? ""}`} min={f.min ?? 0} max={f.max ?? 100} value={val}
