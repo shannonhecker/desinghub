@@ -37,7 +37,8 @@ import {
   FormFieldHelperText as SaltFormFieldHelperText, Input as SaltInput, Button as SaltButton,
 } from "@salt-ds/core";
 
-import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
+import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import { buildM3Theme } from "@/lib/m3MuiTheme";
 import MuiDialog from "@mui/material/Dialog";
 import MuiDialogTitle from "@mui/material/DialogTitle";
 import MuiDialogContent from "@mui/material/DialogContent";
@@ -184,12 +185,14 @@ function SaltForm({ mode, density, model }: Omit<Props, "system">) {
 /* ── Material 3 ── */
 function M3Form({ mode, model }: Omit<Props, "system">) {
   const title = React.useId();
-  const theme = React.useMemo(() => createTheme({ palette: { mode } }), [mode]);
+  const theme = React.useMemo(() => buildM3Theme({ mode }), [mode]);
   /* Material's colours come from its theme object, not CSS variables. */
   const calendarTokens = {
     "--cal-fg": theme.palette.text.primary, "--cal-muted": theme.palette.text.secondary, "--cal-off": theme.palette.text.disabled,
     "--cal-accent": theme.palette.primary.main, "--cal-accent-fg": theme.palette.primary.contrastText,
     "--cal-hover": theme.palette.action.hover, "--cal-range": theme.palette.action.selected, "--cal-font": theme.typography.fontFamily,
+    /* Material's date picker: a chosen day is a filled circle. */
+    "--cal-radius": "50%",
   } as React.CSSProperties;
   return (
     <MuiThemeProvider theme={theme}>

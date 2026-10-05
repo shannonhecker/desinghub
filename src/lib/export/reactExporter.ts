@@ -3,6 +3,7 @@
  * Maps each block type to JSX with the active DS's component imports.
  */
 
+import { m3ThemeSource } from "@/lib/m3MuiTheme";
 import { useBuilder } from "@/store/useBuilder";
 import type { Block, ZoneId, ZoneLayout } from "@/store/useBuilder";
 import { blockToRealJsx, collectImports, type SystemId } from "@/lib/componentApiRegistry";
@@ -497,7 +498,7 @@ export function exportReact(): string {
   const open = !real
     ? ""
     : system === "m3"
-      ? `<ThemeProvider theme={createTheme({ palette: { mode: "${s.mode}" } })}>\n    `
+      ? "<ThemeProvider theme={theme}>\n    "
       : system === "fluent"
         ? `<FluentProvider theme={${s.mode === "dark" ? "webDarkTheme" : "webLightTheme"}}>\n    `
         : system === "carbon"
@@ -522,8 +523,15 @@ export function exportReact(): string {
      corridor types and the labelled value axis. */
   const helper = charts ? `\n${chartHelperSource(system, { extended: allBlocks.some(usesExtendedChart), shapes: allBlocks.some(usesShapeChart) })}` : "";
 
-  return `${imports.join("\n")}
+  /* Material 3: the theme the canvas drew with (m3MuiTheme), written out, so
+     the handed-over code is Material 3 and not MUI's default Material 2
+     theme (blue, upper-case, 4px corners). Built once, outside the component. */
+  const theme = real && system === "m3"
+    ? `\n/* Material 3 for MUI: colour roles, shape, type and state layers. */\nconst theme = createTheme(${m3ThemeSource({ mode: s.mode === "dark" ? "dark" : "light", density: s.density })});\n`
+    : "";
 
+  return `${imports.join("\n")}
+${theme}
 export default function Dashboard() {
   return (
     ${open}<div className="dashboard-layout" data-mode="${s.mode}" data-density="${jsxAttr(s.density)}"${sidebarAttr}>

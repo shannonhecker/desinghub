@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { useBuilder } from "@/store/useBuilder";
 import { exportReact, exportReactFiles, saltDensity } from "../export/reactExporter";
+import { m3Roles, m3ThemeSource } from "../m3MuiTheme";
 
 function setCanvas(designSystem: string, blocks: Array<{ id: string; type: string; props: Record<string, unknown> }>) {
   useBuilder.setState({
@@ -46,6 +47,27 @@ describe("reactExporter — real DS code for registry-covered blocks", () => {
     expect(code).toContain("createTheme({ palette: { mode:");
     expect(code).toContain('<Button variant="contained">Submit</Button>');
     expect(code).not.toContain('className="btn');
+  });
+
+  it("M3 export carries the Material 3 theme the canvas drew with, not MUI's default", () => {
+    for (const mode of ["light", "dark"] as const) {
+      setCanvas("m3", [{ id: "b1", type: "SimulatedButton", props: { label: "Submit", variant: "primary" } }]);
+      useBuilder.setState({ mode });
+      const code = exportReact();
+      const roles = m3Roles(mode);
+      /* One theme, built once outside the component, handed to the provider. */
+      expect(code.match(/createTheme\(/g)).toHaveLength(1);
+      expect(code).toContain("<ThemeProvider theme={theme}>");
+      expect(code.indexOf("const theme = createTheme(")).toBeLessThan(code.indexOf("export default function Dashboard"));
+      /* The same options the builder's renderer uses. */
+      expect(code).toContain(`const theme = createTheme(${m3ThemeSource({ mode, density: useBuilder.getState().density })});`);
+      expect(code).toContain(`primary: { main: "${roles.primary}"`);
+      expect(code).toContain(`contrastText: "${roles.onPrimary}"`);
+      expect(code).toContain('textTransform: "none"');
+      expect(code).toContain("borderRadius: 9999");
+      expect(code).toContain('fontFamily: "Roboto, sans-serif"');
+    }
+    useBuilder.setState({ mode: "light" });
   });
 
   it("Fluent button → real <Button appearance> + FluentProvider theme + @fluentui/react-components import", () => {

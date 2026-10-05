@@ -12408,6 +12408,15 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+/* Material 3: the actions the canvas draws itself follow the system's
+   buttons (m3MuiTheme). A filled action is the primary role with its
+   on-primary label (white on the pale dark-mode primary was unreadable),
+   fully rounded and in sentence case; a text action is in sentence case.
+   Sizes are untouched, so the hero and the cards keep their geometry. */
+.preview-m3 { --bc-chrome-mark-fg: var(--ds-on-primary); }
+.preview-m3 .dh-hero-button,
+.preview-m3 .dh-launcher-open { font-weight: 500; letter-spacing: 0.01em; text-transform: none; }
+.preview-m3 .dh-hero-button { border-radius: var(--ds-btn-radius); }
 
 /* ── Record panel (RecordPanel.tsx): the detail of a selected record ── */
 .dh-record {
