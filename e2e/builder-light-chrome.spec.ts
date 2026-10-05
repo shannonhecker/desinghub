@@ -68,6 +68,54 @@ function expectAllPass(rows: Array<{ text: string; cls: string; ratio: number; n
   for (const r of rows) expect.soft(r.ratio, `${label}: "${r.text}" (${r.cls}) ${r.ratio}:1 needs ${r.need}:1`).toBeGreaterThanOrEqual(r.need);
 }
 
+/* Owner, 5 Oct: the Export menu was drawn BEHIND the canvas (the template's
+   sticky header painted over it). Every top-bar and toolbar menu must be the
+   topmost thing at each of its items, whatever the template puts in the frame. */
+for (const [width, height] of [[1512, 738], [1100, 700]] as const) {
+  test(`top-bar and toolbar menus paint above the canvas at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.route("**/api/health", (route) => route.fulfill({ json: { anthropicConfigured: false, firebaseConfigured: false } }));
+    await page.goto("/builder", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible({ timeout: 30_000 });
+    await expect(async () => {
+      const browse = page.getByRole("button", { name: /Browse templates/ });
+      if (await browse.isVisible()) await browse.click();
+      await expect(page.getByRole("list", { name: "Starting templates" })).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Use the Risk Analytics template" }).click();
+    await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Edit canvas", exact: true }).click();
+    await page.waitForTimeout(600);
+    /* With the component panel closed the menus hang over the canvas frame. */
+    const close = page.getByRole("button", { name: "Close panel", exact: true });
+    if (await close.isVisible()) await close.click();
+    await page.waitForTimeout(400);
+    for (const [trigger, menuSel] of [
+      [page.getByRole("button", { name: "Export canvas" }), ".top-bar-export-menu"],
+      [page.getByRole("button", { name: /^Design system:/ }), ".preview-bar-ds-menu"],
+    ] as const) {
+      await trigger.click();
+      const menu = page.locator(menuSel).first();
+      await expect(menu).toBeVisible();
+      await page.waitForTimeout(250);
+      const hidden = await menu.evaluate((m) => {
+        const out: string[] = [];
+        for (const it of m.querySelectorAll("[role^='menuitem']")) {
+          const r = it.getBoundingClientRect();
+          const x = r.left + r.width / 2, y = r.top + r.height / 2;
+          if (r.width === 0 || y < 0 || y > window.innerHeight) continue;
+          const top = document.elementFromPoint(x, y);
+          if (!top || !m.contains(top)) out.push(`"${(it.textContent || "").trim().slice(0, 24)}" under ${top ? (top.getAttribute("class") || top.tagName).slice(0, 40) : "nothing"}`);
+        }
+        return out;
+      });
+      expect(hidden, `${menuSel}: every item is on top`).toEqual([]);
+      await page.keyboard.press("Escape");
+      await expect(menu).toBeHidden();
+    }
+  });
+}
+
 for (const mode of ["light", "dark"] as const) {
   test.describe(`${mode} chrome`, () => {
     test("the Sessions drawer is readable: title, helper, session name, date and New session", async ({ page }) => {

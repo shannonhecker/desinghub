@@ -12675,6 +12675,12 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
      scales it to the stage (frameFit.ts). */
   box-sizing: border-box;
   flex: 1;
+  /* The canvas is its own stacking context. Without it the frame (static,
+     z-index auto) let the template's own layers (the sticky .bp-header at
+     z-index 10, DS popovers, etc.) join the app shell's stacking context and
+     paint over the top bar's z-index 10 context, i.e. over the open Export
+     menu. Isolated, nothing inside the canvas can rise above the chrome. */
+  isolation: isolate;
 }
 
 /* ── Dashboard skeleton inside the frame ── */
