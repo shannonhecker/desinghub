@@ -241,3 +241,24 @@ export function goToPlan(shown: readonly number[], wider: readonly number[] | nu
   if (wider && count(wider) > here) return "wider";
   return here ? "here" : "none";
 }
+
+/* ── The wheel ── */
+
+export type WheelTarget = "page" | "swallow" | "zoomTime" | "panTime" | "zoomPrice";
+/** Who a wheel event belongs to. The page must never feel trapped, so a
+ *  plain wheel is the chart's only when it has something to do there:
+ *  - off the plot and its axes: the page's;
+ *  - over the plot or the time axis: the page's while TIME is at the full
+ *    view, whatever the price scale is (zooming starts with Ctrl or Cmd, or
+ *    from the rail, the keys or a box); the chart's once time is zoomed;
+ *  - over the price gutter: the price scale's once anything is zoomed, or
+ *    with Ctrl or Cmd; otherwise the page's.
+ *  "swallow": the tail of a zoom-out flick that has just reached the full
+ *  view (within `release` ms of the last zoom): neither zooms nor scrolls. */
+export function wheelTarget(w: { region: "plot" | "time" | "price" | null; modifier: boolean; horizontal: boolean; viewport: Viewport; sinceZoom: number; release: number }): WheelTarget {
+  if (!w.region) return "page";
+  const tail = w.sinceZoom <= w.release ? "swallow" : "page";
+  if (w.region === "price") return w.modifier || !isFullView(w.viewport) ? "zoomPrice" : tail;
+  if (!w.modifier && w.viewport.x === null) return tail;
+  return w.horizontal ? "panTime" : "zoomTime";
+}

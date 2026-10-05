@@ -5,7 +5,7 @@ import Highcharts from "highcharts";
 import type HighchartsReact from "highcharts-react-official";
 import {
   backToLive as liveSpan, boxSpans, clampTime, followFeed, FULL_VIEW, isAwayFromLive, isFullView, keyAction,
-  panPrice, panTime, scalePrice, scaleTime, wheelFactor, ZOOM_STEP, zoomPrice, zoomTime,
+  panPrice, panTime, scalePrice, scaleTime, wheelFactor, wheelTarget, ZOOM_STEP, zoomPrice, zoomTime,
   type PriceLimits, type Span, type TimeBounds, type Viewport,
 } from "@/lib/chartViewport";
 
@@ -250,6 +250,7 @@ export function useChartNavigation(o: Options): ChartNavigation {
       const host = opts.current.plotRef.current;
       if (host) {
         host.style.setProperty("--nav-plot-left", `${c.plotLeft}px`);
+        host.style.setProperty("--nav-plot-top", `${c.plotTop}px`);
         host.style.setProperty("--nav-plot-right", `${Math.max(0, c.chartWidth - x)}px`);
         host.style.setProperty("--nav-plot-bottom", `${Math.max(0, c.chartHeight - c.plotTop - c.plotHeight)}px`);
       }
@@ -463,34 +464,24 @@ export function useChartNavigation(o: Options): ChartNavigation {
       const region = regionOf(c, p.chartX, p.chartY);
       /* Off the plot and its axes the page scrolls as usual. */
       if (!region) return;
-      /* The page must never feel trapped. At the full view a plain wheel,
-         up or down, is the page's: zooming starts with Ctrl or Cmd held (a
-         trackpad pinch arrives that way), or from the rail, the keys or a
-         box. Once the view is zoomed the wheel is the chart's, until it is
-         back at the full view (and a beat longer, so the tail of a zoom-out
-         flick does not jump the page). */
-      const modifier = e.ctrlKey || e.metaKey;
+      /* Whose wheel it is: see wheelTarget (the page must never feel trapped). */
       const vertical = Math.abs(e.deltaY) >= Math.abs(e.deltaX);
-      if (!modifier && isFullView(vp.current)) {
-        if (e.timeStamp - lastWheelZoom <= WHEEL_RELEASE) e.preventDefault();
-        else if (vertical && region === "plot") wheelNote(e.timeStamp);
-        return;
-      }
+      const target = wheelTarget({ region, modifier: e.ctrlKey || e.metaKey, horizontal: !vertical, viewport: vp.current, sinceZoom: e.timeStamp - lastWheelZoom, release: WHEEL_RELEASE });
+      if (target === "page") { if (vertical && region === "plot") wheelNote(e.timeStamp); return; }
       e.preventDefault();
+      if (target === "swallow") return;
       if (vertical) lastWheelZoom = e.timeStamp;
       const pinch = e.ctrlKey && e.deltaMode === 0 && Math.abs(e.deltaY) < 50 ? PINCH_GAIN : 1;
       const now = shown(c);
-      if (region === "price") {
+      if (target === "zoomPrice") {
         apply({ x: vp.current.x, y: zoomPrice(now.y, c.yAxis[1].toValue(p.chartY), wheelFactor(e.deltaY * pinch, e.deltaMode), priceLimits(c)) });
-        return;
-      }
-      /* A sideways swipe (a trackpad) pans time. */
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      } else if (target === "panTime") {
+        /* A sideways swipe (a trackpad) pans time. */
         const perPx = (now.x.max - now.x.min) / c.plotWidth;
         if (vp.current.x || e.deltaX < 0) apply({ x: clampTime(panTime(now.x, e.deltaX * perPx, timeBounds()), timeBounds()), y: vp.current.y });
-        return;
+      } else {
+        apply({ x: zoomTime(vp.current.x, c.xAxis[0].toValue(p.chartX), wheelFactor(e.deltaY * pinch, e.deltaMode), timeBounds()), y: vp.current.y });
       }
-      apply({ x: zoomTime(vp.current.x, c.xAxis[0].toValue(p.chartX), wheelFactor(e.deltaY * pinch, e.deltaMode), timeBounds()), y: vp.current.y });
     };
 
     const onDoubleClick = (e: MouseEvent) => {

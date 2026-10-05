@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  backToLive, boxSpans, clampTime, followFeed, FULL_VIEW, goToPlan, goToSpan, isAwayFromLive, isFullView, keyAction,
+  backToLive, boxSpans, clampTime, followFeed, FULL_VIEW, goToPlan, goToSpan, wheelTarget, isAwayFromLive, isFullView, keyAction,
   panPrice, panTime, parseGoTo, scalePrice, scaleTime, wheelFactor, ZOOM_STEP, zoomPrice, zoomTime,
   type PriceLimits, type TimeBounds,
 } from "../chartViewport";
@@ -245,5 +245,41 @@ describe("goToPlan", () => {
   it("no bar in the window anywhere: none", () => {
     expect(goToPlan(session, wider, 99 * H + 10 * 60_000, 99 * H + 50 * 60_000)).toBe("none");
     expect(goToPlan(session, null, 100 * H + 10_000, 100 * H + 20_000)).toBe("none");
+  });
+});
+
+describe("wheelTarget", () => {
+  const base = { modifier: false, horizontal: false, sinceZoom: 10_000, release: 400 };
+  const full = { x: null, y: null };
+  const priceOnly = { x: null, y: { min: 1.37, max: 1.38 } };
+  const timeZoomed = { x: { min: 10, max: 60 }, y: null };
+
+  it("off the chart, and over the plot at the full view, a plain wheel is the page's", () => {
+    expect(wheelTarget({ ...base, region: null, viewport: timeZoomed })).toBe("page");
+    expect(wheelTarget({ ...base, region: "plot", viewport: full })).toBe("page");
+    expect(wheelTarget({ ...base, region: "time", viewport: full })).toBe("page");
+    expect(wheelTarget({ ...base, region: "price", viewport: full })).toBe("page");
+  });
+  it("with only the price scale zoomed, a plain wheel over the plot is still the page's (time has nothing to zoom out of)", () => {
+    expect(wheelTarget({ ...base, region: "plot", viewport: priceOnly })).toBe("page");
+    expect(wheelTarget({ ...base, region: "time", viewport: priceOnly })).toBe("page");
+    expect(wheelTarget({ ...base, region: "plot", viewport: priceOnly, horizontal: true })).toBe("page");
+    /* Over the price gutter it is the price scale's. */
+    expect(wheelTarget({ ...base, region: "price", viewport: priceOnly })).toBe("zoomPrice");
+  });
+  it("Ctrl or Cmd makes it the chart's from the full view", () => {
+    expect(wheelTarget({ ...base, region: "plot", viewport: full, modifier: true })).toBe("zoomTime");
+    expect(wheelTarget({ ...base, region: "plot", viewport: priceOnly, modifier: true })).toBe("zoomTime");
+    expect(wheelTarget({ ...base, region: "price", viewport: full, modifier: true })).toBe("zoomPrice");
+  });
+  it("once time is zoomed the plain wheel zooms or, sideways, pans; the gutter takes price", () => {
+    expect(wheelTarget({ ...base, region: "plot", viewport: timeZoomed })).toBe("zoomTime");
+    expect(wheelTarget({ ...base, region: "plot", viewport: timeZoomed, horizontal: true })).toBe("panTime");
+    expect(wheelTarget({ ...base, region: "price", viewport: timeZoomed })).toBe("zoomPrice");
+  });
+  it("the tail of a zoom-out flick that reached the full view is swallowed, then the page has it", () => {
+    expect(wheelTarget({ ...base, region: "plot", viewport: full, sinceZoom: 120 })).toBe("swallow");
+    expect(wheelTarget({ ...base, region: "plot", viewport: priceOnly, sinceZoom: 120 })).toBe("swallow");
+    expect(wheelTarget({ ...base, region: "plot", viewport: full, sinceZoom: 401 })).toBe("page");
   });
 });
