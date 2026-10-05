@@ -11,7 +11,8 @@
    font loaded the glyph is exactly this box, so nothing moves. `clip` (not
    `hidden`) leaves the span's baseline where it was; `hidden` is the fallback
    for browsers without it. Declared first and at one class of specificity so
-   any rule below that sizes an icon still wins. */
+   any rule below that sizes an icon still wins. A rule that gives an icon a
+   taller line must also free the height (see .composer-attach-error). */
 :where(.builder-shell) .material-symbols-outlined {
   display: inline-block;
   width: 1em;
@@ -20,6 +21,8 @@
   white-space: nowrap;
   overflow: hidden;
   overflow: clip;
+  /* The square is the glyph's: padding on an icon (a badge) goes around it. */
+  box-sizing: content-box;
 }
 
 /* --------------------------------------------------------------------------
@@ -4058,11 +4061,19 @@
   padding: var(--bc-gap-xxs) 0;
   color: var(--bc-attach-error-fg);
   font-size: var(--bc-attach-font-sm);
-  line-height: 1.45;
+  /* One line of the sentence, as a length: the icon beside it uses the same. */
+  --attach-error-line: calc(var(--bc-attach-font-sm) * 1.45);
+  line-height: var(--attach-error-line);
 }
 .composer-attach-error .material-symbols-outlined {
   font-size: var(--bc-attach-icon-sm);
-  line-height: inherit;
+  /* The icon's box is one line of the sentence tall, so the glyph is centred
+     on the first row. Not the 1em square of the containment rule, which
+     under a taller line cut the glyph's foot; and not the inherited ratio,
+     which made a line of the icon's own larger size and sat it low. Still
+     1em wide, still clipped. */
+  line-height: var(--attach-error-line);
+  height: var(--attach-error-line);
   flex-shrink: 0;
 }
 .composer-attach-dismiss {

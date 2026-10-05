@@ -135,3 +135,106 @@ test.describe("Builder chrome icons without the icon font", () => {
     expect(href).not.toContain("display=swap");
   });
 });
+
+/**
+ * The other side of the square box: with the font loaded, the box must never
+ * cut the glyph. A rule that gives an icon a taller line (the attachment
+ * error sits on a 1.45 line beside its sentence) or padding (a badge) has to
+ * keep the whole glyph inside what is drawn.
+ */
+type Glyph = { word: string; where: string; fontSize: number; lineHeight: number; innerW: number; innerH: number };
+
+async function iconFontReady(page: Page) {
+  await expect.poll(() => page.evaluate(() => document.fonts.load('16px "Material Symbols Outlined"', "error").then(f => f.length > 0)), { timeout: 30_000 }).toBe(true);
+  await page.evaluate(() => document.fonts.ready);
+}
+
+async function glyphs(page: Page, scope = ".builder-shell"): Promise<Glyph[]> {
+  return page.evaluate(sel => [...document.querySelectorAll<HTMLElement>(`${sel} .material-symbols-outlined`)]
+    .filter(el => el.getClientRects().length > 0 && (el.textContent ?? "").trim().length > 0)
+    .map(el => {
+      const c = getComputedStyle(el);
+      const px = (v: string) => parseFloat(v) || 0;
+      return {
+        word: (el.textContent ?? "").trim(),
+        where: (el.parentElement?.className ?? "").toString().slice(0, 40),
+        fontSize: px(c.fontSize),
+        innerW: el.clientWidth - px(c.paddingLeft) - px(c.paddingRight),
+        innerH: el.clientHeight - px(c.paddingTop) - px(c.paddingBottom),
+        /* "normal" for this font is its em: one glyph. */
+        lineHeight: px(c.lineHeight) || px(c.fontSize),
+      };
+    }), scope);
+}
+
+function expectWhole(list: Glyph[]) {
+  for (const g of list) {
+    const name = `"${g.word}" in .${g.where}`;
+    expect(g.innerW, `${name}: room for one glyph across`).toBeGreaterThanOrEqual(g.fontSize - 0.5);
+    expect(g.innerH, `${name}: room for one glyph down`).toBeGreaterThanOrEqual(g.fontSize - 0.5);
+    /* The glyph is one em, centred in its line. The line starts at the top of
+       the box, so the glyph ends at (line + em) / 2: that must be inside.
+       (scrollHeight cannot say this: it counts the font's own ascent and
+       descent, a couple of pixels past the em on every icon, cut or not.) */
+    expect((g.lineHeight + g.fontSize) / 2, `${name}: the glyph's foot is inside its box (line ${g.lineHeight}px, box ${g.innerH}px)`).toBeLessThanOrEqual(g.innerH + 0.5);
+  }
+}
+
+test.describe("Builder chrome icons with the icon font", () => {
+  test("a rejected attachment: the error icon is whole and sits on the sentence's first line", async ({ page }) => {
+    await page.route("**/api/health", route => route.fulfill({ json: { anthropicConfigured: true, firebaseConfigured: false } }));
+    await page.goto("/builder");
+    await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
+    await iconFontReady(page);
+    const notAnImage = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>');
+    await page.locator('[data-testid="composer-file-input"]').setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: notAnImage });
+    const error = page.locator(".composer-attach-error");
+    await expect(error).toContainText("That file isn't an image we can read");
+    const icon = error.locator(".material-symbols-outlined");
+    await expect(icon).toHaveText("error");
+
+    expectWhole(await glyphs(page, ".composer-attach-status"));
+
+    /* On the row of the sentence's first line, centred on it. */
+    const rows = await error.evaluate(el => {
+      const glyph = el.querySelector(".material-symbols-outlined")!.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(el.querySelector("span:not(.material-symbols-outlined)")!);
+      const line = range.getClientRects()[0];
+      return { glyphTop: glyph.top, glyphBottom: glyph.bottom, lineTop: line.top, lineBottom: line.bottom };
+    });
+    const glyphMid = (rows.glyphTop + rows.glyphBottom) / 2;
+    const lineMid = (rows.lineTop + rows.lineBottom) / 2;
+    expect(Math.abs(glyphMid - lineMid), "the icon is centred on the first line of the sentence").toBeLessThanOrEqual(2);
+  });
+
+  test("every ligature in the edit chrome is drawn whole: nothing the square box cuts", async ({ page }) => {
+    await page.goto("/builder");
+    await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
+    await iconFontReady(page);
+    expectWhole(await glyphs(page));
+    await page.getByRole("button", { name: /Browse templates/ }).click();
+    await expect(page.getByRole("button", { name: "Use the Performance Analytics template" })).toBeVisible();
+    expectWhole(await glyphs(page));
+    await page.getByRole("button", { name: "Use the Performance Analytics template" }).click();
+    await expect(page.locator(".present-bar")).toBeVisible();
+    await page.getByRole("button", { name: "Edit canvas", exact: true }).click();
+    await expect(page.locator(".top-bar")).toBeVisible();
+    const library = page.getByRole("button", { name: "Show component library" });
+    if (await library.isVisible()) await library.click();
+    const block = page.locator('.bp-main [data-block-id][data-zone="body"]').first();
+    await block.focus();
+    await block.press("Enter");
+    await expect(block).toHaveClass(/is-selected/);
+    const edit = await glyphs(page);
+    expect(edit.length).toBeGreaterThan(20);
+    expectWhole(edit);
+    await block.click({ button: "right", position: { x: 5, y: 5 } });
+    await expect(page.getByRole("menuitem", { name: /^Delete/ })).toBeVisible();
+    expectWhole(await glyphs(page, "body"));
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Export canvas" }).click();
+    expectWhole(await glyphs(page, "body"));
+  });
+});
+
