@@ -180,6 +180,20 @@ function uoauiButtonClass(variant: string): string {
 /* ════════════════════════════════════════════════════════════════════
    UOAUI core blocks — real `.a-*` markup (CSS injected by UoauiReal).
    ════════════════════════════════════════════════════════════════════ */
+/* The avatar's photo, falling back to the initials when the image fails to
+   load (as Salt, M3 and Fluent do), so a dead host never shows a broken image. */
+function UoauiAvatarFace({ src, initials }: { src: string; initials: string }): React.ReactElement {
+  const [failed, setFailed] = React.useState(false);
+  const photo = src && !failed;
+  return React.createElement(
+    "div",
+    { className: "a-avatar", style: photo ? { overflow: "hidden", padding: 0 } : undefined },
+    photo
+      ? React.createElement("img", { src: publicAssetUrl(src), alt: initials, onError: () => setFailed(true), style: { width: "100%", height: "100%", objectFit: "cover" } })
+      : initials,
+  );
+}
+
 const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
   SimulatedButton: (p) =>
     React.createElement(
@@ -366,13 +380,8 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
     return React.createElement(
       "div",
       { style: { position: "relative", display: "inline-flex" } },
-      React.createElement(
-        "div",
-        { className: "a-avatar", style: s(p.src) ? { overflow: "hidden", padding: 0 } : undefined },
-        s(p.src)
-          ? React.createElement("img", { src: publicAssetUrl(s(p.src)), alt: s(p.initials, ""), style: { width: "100%", height: "100%", objectFit: "cover" } })
-          : s(p.initials, "?"),
-      ),
+      /* Keyed on the photo, so a new photo gets a fresh try. */
+      React.createElement(UoauiAvatarFace, { key: s(p.src), src: s(p.src), initials: s(p.initials, "?") }),
       dot,
     );
   },
