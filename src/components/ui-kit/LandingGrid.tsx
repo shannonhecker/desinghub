@@ -313,7 +313,6 @@ export const LandingGrid = React.memo(function LandingGrid() {
     );
   };
 
-  const jump = (id: string) => rootRef.current?.querySelector(`#${id}`)?.scrollIntoView({ block: "start" });
 
   return (
     <div className="kit-page" ref={rootRef} data-system={activeSystem} onKeyDown={onWallKey}>
@@ -349,15 +348,6 @@ export const LandingGrid = React.memo(function LandingGrid() {
       </div>
 
       <div className="kit-body">
-        {/* In-page rail: the sections, in reach on wide screens. */}
-        <nav className="kit-rail" aria-label="Sections">
-          {(["foundations", "components", "patterns", "tools"] as KitSection[]).filter(show).map((s) => (
-            <a key={s} href={`#kit-${s}`} onClick={(e) => { e.preventDefault(); jump(`kit-${s}`); }}>
-              {s[0].toUpperCase() + s.slice(1)} <span>{counts[s]}</span>
-            </a>
-          ))}
-        </nav>
-
         <div className="kit-sections">
           {!q && filter === "all" && (
             <section className="kit-band" aria-labelledby="kit-band-h">

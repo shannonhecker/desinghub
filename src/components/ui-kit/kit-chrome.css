@@ -8,7 +8,7 @@
                            defined once here from the primitives. Light and
                            dark need no second definition: the primitives
                            already swap with the system's mode.
-   3. Component   --kit-card-*, --kit-stage-*, --kit-rail-*, --kit-code-*
+   3. Component   --kit-card-*, --kit-stage-*, --kit-code-*
                            reference only the semantic layer.
    Rules below use component and semantic tokens only. No colour literals.
 
@@ -112,7 +112,6 @@
   --kit-card-shadow-hover: var(--kit-shadow-lift);
   --kit-stage-bg: var(--kit-surface-sunken);
   --kit-stage-radius: max(0px, calc(var(--kit-radius) - var(--kp-space-1)));
-  --kit-rail-text: var(--kit-text-muted);
   --kit-code-bg: var(--kit-surface-sunken);
   --kit-chip-bg: var(--kit-surface-sunken);
   --kit-chip-selected: var(--kit-surface-selected);
@@ -244,7 +243,6 @@
 .kit-seg button[aria-selected="true"] { background: var(--kit-surface-raised); color: var(--kit-text); font-weight: 600; box-shadow: var(--kit-shadow-rest); }
 .kit-seg button:focus-visible,
 .kit-filters button:focus-visible,
-.kit-rail a:focus-visible,
 .kit-empty-actions button:focus-visible,
 .kit-compare-meta a:focus-visible,
 .kit-nis a:focus-visible,
@@ -307,17 +305,9 @@
 .kit-filters button:disabled { opacity: 0.45; cursor: default; }
 
 /* Body: sticky section rail + sections */
-.kit-body { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: var(--kp-space-6); align-items: start; padding-top: var(--kp-space-5); }
-.kit-rail { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 2px; }
-.kit-rail a {
-  display: flex; justify-content: space-between; gap: var(--kp-space-2);
-  padding: var(--kp-space-2) var(--kp-space-3);
-  border-radius: var(--kit-radius-control);
-  color: var(--kit-rail-text); font-size: var(--kp-text-sm); text-decoration: none;
-  transition: background-color var(--kp-dur) var(--kp-ease), color var(--kp-dur) var(--kp-ease);
-}
-.kit-rail a span { font-variant-numeric: tabular-nums; }
-.kit-rail a:hover { background: var(--kit-surface-hover); color: var(--kit-text); }
+/* One column: the filter row above is the one way to narrow by section, so
+   the sections take the full content width at every size. */
+.kit-body { padding-top: var(--kp-space-5); }
 .kit-sections { min-width: 0; }
 .kit-section, .kit-band { padding-bottom: var(--kp-space-7); scroll-margin-top: 72px; }
 .kit-section-head { margin-bottom: var(--kp-space-5); }
@@ -622,8 +612,6 @@
 @container kit (max-width: 1180px) {
   .kit-head { grid-template-columns: minmax(0, 1fr); align-items: start; }
   .kit-fp { justify-self: start; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
-  .kit-body { grid-template-columns: minmax(0, 1fr); }
-  .kit-rail { display: none; }
 }
 @container kit (max-width: 1040px) {
   .kit-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -675,7 +663,7 @@
   .kit-hero { padding: var(--kp-space-5) var(--kp-space-4); min-height: 220px; justify-content: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .uikit-card, .kit-seg button, .kit-filters button, .kit-rail a, .kit-search input, .kit-tabs, .kit-crumb-link { transition: none; }
+  .uikit-card, .kit-seg button, .kit-filters button, .kit-search input, .kit-tabs, .kit-crumb-link { transition: none; }
   .uikit-card:hover { transform: none; }
   .kit-wall > li, .kit-compare, .kit-hero-inner { animation: none; }
 }
