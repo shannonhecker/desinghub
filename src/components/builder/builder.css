@@ -18900,3 +18900,51 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
   outline-offset: var(--insp-focus-offset);
 }
 .inspector-action-btn--danger { color: var(--bc-danger); margin-left: auto; }
+
+/* Zone layout toolbar: never on plain hover of a zone's blocks (5 Oct: on
+   hover it sat over the first row's own controls and took a click meant for
+   a panel's Configure button, which re-laid the whole body). It belongs to
+   the zone's label: it shows while the pointer is on the "Header" / "Footer"
+   / "Sidebar" label or on the bar itself, or while focus is inside it, and
+   sits in the label's band beside the label. The body has no label: its
+   layout lives in the panel's "Body layout" section (the bar still opens for
+   keyboard focus). */
+.zone-drop-container:hover > .zone-layout-overlay {
+  opacity: 0;
+  transform: translateY(-2px);
+  pointer-events: none;
+}
+.zone-drop-header > .zone-layout-overlay,
+.zone-drop-footer > .zone-layout-overlay {
+  top: calc(-1 * var(--dh-pad-zone, var(--bc-gap-sm)));
+  left: var(--bc-zone-bar-offset);
+  right: auto;
+  width: max-content;
+  flex-wrap: nowrap;
+}
+/* A bridge back to the label, so the pointer can travel from one to the other. */
+.zone-drop-header > .zone-layout-overlay::before,
+.zone-drop-footer > .zone-layout-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 100%;
+  width: var(--bc-zone-bar-offset);
+}
+.bp-header:has(> .bp-frame-tab:hover) .zone-drop-header > .zone-layout-overlay,
+.bp-header:has(> .bp-frame-tab:focus-within) .zone-drop-header > .zone-layout-overlay,
+.bp-footer:has(> .bp-frame-tab:hover) .zone-drop-footer > .zone-layout-overlay,
+.bp-footer:has(> .bp-frame-tab:focus-within) .zone-drop-footer > .zone-layout-overlay,
+.bp-sidebar:has(> .bp-frame-tab:hover) .zone-drop-sidebar > .zone-layout-overlay,
+.bp-sidebar:has(> .bp-frame-tab:focus-within) .zone-drop-sidebar > .zone-layout-overlay,
+.zone-drop-container > .zone-layout-overlay:hover,
+.zone-drop-container > .zone-layout-overlay:focus-within {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.zone-drop-container:has(.hover-inspector.is-pinned) > .zone-layout-overlay:not(:focus-within) {
+  opacity: 0;
+  pointer-events: none;
+}

@@ -637,6 +637,8 @@
   --insp-swatch-edge:    rgba(255, 255, 255, 0.08);
   --insp-select-caret:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9afbb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   /* Floating canvas toolbars are solid: nothing reads through them. */
+  /* Where a header or footer layout toolbar starts, past its zone label. */
+  --bc-zone-bar-offset:  72px;
   --bc-toolbar-surface:  #1e2126;
   --insp-toolbar-bg:     var(--bc-toolbar-surface);
   --insp-toolbar-fg:     var(--bc-fg-muted);
